@@ -4,6 +4,7 @@ import { get as httpsGet } from 'https'
 import { join } from 'path'
 import { app, ipcMain, shell } from 'electron'
 import type { CatalogMod, CatalogResult } from '../shared/catalog'
+import { DEFAULT_GAME_ID, resolveGameId } from '../shared/games'
 import type { ModImportResult } from '../shared/mods'
 import { assertModsAllowed } from './dependencyManager'
 import { findModByCatalogId, importMod, listMods } from './modManager'
@@ -15,22 +16,28 @@ function getCatalogPath(): string {
   return join(__dirname, '../../resources/catalog/mods.json')
 }
 
-export function loadCatalog(): CatalogResult {
+function readCatalogFile(): CatalogMod[] {
   const catalogPath = getCatalogPath()
   if (!existsSync(catalogPath)) {
-    return { mods: [] }
+    return []
   }
 
   try {
-    const parsed = JSON.parse(readFileSync(catalogPath, 'utf-8')) as CatalogResult
-    return { mods: parsed.mods ?? [] }
+    const parsed = JSON.parse(readFileSync(catalogPath, 'utf-8')) as { mods?: CatalogMod[] }
+    return parsed.mods ?? []
   } catch {
-    return { mods: [] }
+    return []
   }
 }
 
-function findCatalogMod(catalogId: string): CatalogMod | undefined {
-  return loadCatalog().mods.find((mod) => mod.id === catalogId)
+export function loadCatalog(gameId?: string): CatalogResult {
+  const resolvedGameId = resolveGameId(gameId)
+  const mods = readCatalogFile().filter((mod) => mod.game_id === resolvedGameId)
+  return { game_id: resolvedGameId, mods }
+}
+
+function findCatalogMod(catalogId: string, gameId?: string): CatalogMod | undefined {
+  return loadCatalog(gameId).mods.find((mod) => mod.id === catalogId)
 }
 
 function downloadFile(url: string, destination: string): Promise<void> {
@@ -61,13 +68,17 @@ function downloadFile(url: string, destination: string): Promise<void> {
   })
 }
 
-export async function installCatalogMod(catalogId: string): Promise<ModImportResult> {
+export async function installCatalogMod(
+  catalogId: string,
+  gameId?: string
+): Promise<ModImportResult> {
   const blocked = assertModsAllowed()
   if (blocked) {
     return blocked
   }
 
-  const catalogMod = findCatalogMod(catalogId)
+  const resolvedGameId = resolveGameId(gameId)
+  const catalogMod = findCatalogMod(catalogId, resolvedGameId)
   if (!catalogMod) {
     return { success: false, error: 'Catalog mod not found.' }
   }
@@ -89,7 +100,8 @@ export async function installCatalogMod(catalogId: string): Promise<ModImportRes
         description: existing.description,
         enabled: existing.enabled,
         importedAt: existing.importedAt,
-        catalogId: existing.catalogId
+        catalogId: existing.catalogId,
+        gameId: existing.gameId
       }
     }
   }
@@ -103,6 +115,7 @@ export async function installCatalogMod(catalogId: string): Promise<ModImportRes
     await downloadFile(catalogMod.download_url, zipPath)
     const result = await importMod(zipPath, {
       catalogId: catalogMod.id,
+      gameId: catalogMod.game_id,
       name: catalogMod.name,
       author: catalogMod.author,
       description: catalogMod.description,
@@ -120,16 +133,23 @@ export async function installCatalogMod(catalogId: string): Promise<ModImportRes
 }
 
 export function registerCatalogIpc(): void {
-  ipcMain.handle('catalog:getMods', () => loadCatalog())
-  ipcMain.handle('catalog:install', (_event, catalogId: unknown) => {
+  ipcMain.handle('catalog:getMods', (_event, gameId: unknown) => {
+    if (gameId !== undefined && typeof gameId !== 'string') {
+      return loadCatalog(DEFAULT_GAME_ID)
+    }
+    return loadCatalog(typeof gameId === 'string' ? gameId : DEFAULT_GAME_ID)
+  })
+  ipcMain.handle('catalog:install', (_event, catalogId: unknown, gameId: unknown) => {
     if (typeof catalogId !== 'string') {
       return { success: false, error: 'Catalog id must be a string.' } satisfies ModImportResult
     }
-    return installCatalogMod(catalogId)
+    const resolvedGameId = typeof gameId === 'string' ? gameId : DEFAULT_GAME_ID
+    return installCatalogMod(catalogId, resolvedGameId)
   })
-  ipcMain.handle('catalog:getInstalledMap', () => {
+  ipcMain.handle('catalog:getInstalledMap', (_event, gameId: unknown) => {
+    const resolvedGameId = typeof gameId === 'string' ? resolveGameId(gameId) : DEFAULT_GAME_ID
     const installed: Record<string, string> = {}
-    for (const mod of listMods().mods) {
+    for (const mod of listMods(resolvedGameId).mods) {
       if (mod.catalogId) {
         installed[mod.catalogId] = mod.id
       }

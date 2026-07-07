@@ -2,10 +2,10 @@
  * Release metadata for the Windows installer.
  * Update `version` when shipping a new build (keep in sync with root package.json).
  */
-const VERSION = '1.0.0'
+const VERSION = '1.0.1'
 
-const GITHUB_OWNER = 'gta-mod-launcher'
-const GITHUB_REPO = 'gta-mod-launcher'
+const GITHUB_OWNER = 'thedevman22'
+const GITHUB_REPO = 'gtalaunchermods'
 
 /** Matches electron-builder `artifactName`: ${productName}-${version}-setup.exe */
 function githubReleaseArtifactName(version: string): string {

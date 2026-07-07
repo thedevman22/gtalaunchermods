@@ -10,6 +10,7 @@ import {
 } from 'react'
 import type { CatalogMod } from '../../../shared/catalog'
 import type { MissingCloudMod, ModReconcileResult } from '../../../shared/sync'
+import { DEFAULT_GAME_ID } from '../../../shared/games'
 import { useAuth } from '@renderer/context/AuthContext'
 import { isOfflineDevMode } from '@renderer/lib/supabase'
 import { applySyncedPreferences } from '@renderer/lib/preferencesSync'
@@ -48,8 +49,8 @@ export function ModSyncProvider({ children }: { children: ReactNode }): React.JS
     try {
       const [cloudMods, catalog, library] = await Promise.all([
         fetchUserMods(user.id),
-        window.api.catalog.getMods(),
-        window.api.mods.list()
+        window.api.catalog.getMods(DEFAULT_GAME_ID),
+        window.api.mods.list(DEFAULT_GAME_ID)
       ])
 
       const localByCatalogId = new Map(
@@ -145,7 +146,7 @@ export function ModSyncProvider({ children }: { children: ReactNode }): React.JS
 
   const downloadMissingMod = useCallback(
     async (catalogModId: string): Promise<void> => {
-      const result = await window.api.catalog.install(catalogModId)
+      const result = await window.api.catalog.install(catalogModId, DEFAULT_GAME_ID)
       if (!result.success) {
         throw new Error(result.error ?? 'Download failed.')
       }

@@ -4,23 +4,29 @@ import LiquidBlobBackground from '@renderer/components/LiquidBlobBackground'
 import MotionButton from '@renderer/components/MotionButton'
 import { useLaunch } from '@renderer/context/LaunchContext'
 import { MOTION_DURATION, MOTION_EASE, staggerContainer, staggerItem } from '@renderer/lib/motion'
+import { DEFAULT_GAME_ID } from '../../../shared/games'
+import type { ModSummary } from '../../../preload/index.d'
 
 export default function HomePage(): React.JSX.Element {
   const { isLaunching, startLaunch } = useLaunch()
   const [modStats, setModStats] = useState({ total: 0, enabled: 0 })
 
   useEffect(() => {
-    void window.api.mods.list().then((result) => {
+    const applyStats = (mods: ModSummary[]): void => {
+      const scoped = mods.filter(
+        (mod) => mod.gameId === DEFAULT_GAME_ID || (!mod.gameId && DEFAULT_GAME_ID === 'gta5')
+      )
       setModStats({
-        total: result.mods.length,
-        enabled: result.mods.filter((mod) => mod.enabled).length
+        total: scoped.length,
+        enabled: scoped.filter((mod) => mod.enabled).length
       })
+    }
+
+    void window.api.mods.list(DEFAULT_GAME_ID).then((result) => {
+      applyStats(result.mods)
     })
     return window.api.mods.onChanged((result) => {
-      setModStats({
-        total: result.mods.length,
-        enabled: result.mods.filter((mod) => mod.enabled).length
-      })
+      applyStats(result.mods)
     })
   }, [])
 

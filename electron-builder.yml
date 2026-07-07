@@ -75,3 +75,9 @@ appImage:
   artifactName: ${productName}-${version}.${ext}
 
 npmRebuild: false
+
+publish:
+  provider: github
+  owner: thedevman22
+  repo: gtalaunchermods
+  releaseType: release

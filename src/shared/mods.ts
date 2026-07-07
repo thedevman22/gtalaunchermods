@@ -16,6 +16,7 @@ export interface ModManifest {
   importedAt: string
   deployedFiles: ModDeployedFile[]
   catalogId?: string
+  gameId?: string
 }
 
 export interface ModSummary {
@@ -28,10 +29,12 @@ export interface ModSummary {
   importedAt: string
   thumbnailDataUrl?: string
   catalogId?: string
+  gameId?: string
 }
 
 export interface ModImportOptions {
   catalogId?: string
+  gameId?: string
   name?: string
   author?: string
   version?: string

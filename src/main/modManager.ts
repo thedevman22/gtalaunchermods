@@ -14,6 +14,7 @@ import { basename, dirname, extname, join, relative } from 'path'
 import AdmZip from 'adm-zip'
 import { app, BrowserWindow, dialog, ipcMain, type IpcMainInvokeEvent, type OpenDialogOptions } from 'electron'
 import type { OperationResult } from '../shared/game'
+import { DEFAULT_GAME_ID, resolveGameId } from '../shared/games'
 import type {
   ModDeployedFile,
   ModImportOptions,
@@ -208,7 +209,8 @@ function manifestToSummary(manifest: ModManifest): ModSummary {
     enabled: manifest.enabled,
     importedAt: manifest.importedAt,
     thumbnailDataUrl: loadThumbnailDataUrl(manifest.id),
-    catalogId: manifest.catalogId
+    catalogId: manifest.catalogId,
+    gameId: manifest.gameId
   }
 }
 
@@ -310,10 +312,15 @@ export function getModsLibraryPath(): string {
   return getLibraryRoot()
 }
 
-export function listMods(): ModListResult {
+export function listMods(gameId?: string): ModListResult {
+  const resolvedGameId = gameId ? resolveGameId(gameId) : undefined
   const mods = listModIds()
     .map((id) => readManifest(id))
     .filter((manifest): manifest is ModManifest => manifest !== null)
+    .filter((manifest) => {
+      if (!resolvedGameId) return true
+      return manifest.gameId === resolvedGameId || (!manifest.gameId && resolvedGameId === DEFAULT_GAME_ID)
+    })
     .sort((a, b) => b.importedAt.localeCompare(a.importedAt))
     .map((manifest) => manifestToSummary(manifest))
 
@@ -373,7 +380,8 @@ export async function importMod(
       enabled: false,
       importedAt: new Date().toISOString(),
       deployedFiles: [],
-      catalogId: options?.catalogId
+      catalogId: options?.catalogId,
+      gameId: options?.gameId ?? DEFAULT_GAME_ID
     }
 
     writeManifest(modId, manifest)
@@ -523,12 +531,17 @@ async function browseImportMod(event: IpcMainInvokeEvent): Promise<ModImportResu
     return { success: false, error: 'Import canceled.' }
   }
 
-  return importMod(result.filePaths[0])
+  return importMod(result.filePaths[0], { gameId: DEFAULT_GAME_ID })
 }
 
 export function registerModManagerIpc(): void {
   ipcMain.handle('mods:getLibraryPath', () => getModsLibraryPath())
-  ipcMain.handle('mods:list', () => listMods())
+  ipcMain.handle('mods:list', (_event, gameId: unknown) => {
+    if (gameId !== undefined && typeof gameId !== 'string') {
+      return listMods()
+    }
+    return listMods(typeof gameId === 'string' ? gameId : undefined)
+  })
   ipcMain.handle('mods:import', (_event, zipPath: unknown) => {
     if (typeof zipPath !== 'string') {
       return { success: false, error: 'Zip path must be a string.' } satisfies ModImportResult

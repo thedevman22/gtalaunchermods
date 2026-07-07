@@ -10,6 +10,7 @@ import {
 } from 'react'
 import { LAUNCH_STAGES } from '@renderer/data/splashTips'
 import LaunchOverlay from '@renderer/components/LaunchOverlay'
+import { DEFAULT_GAME_ID } from '../../../shared/games'
 
 interface LaunchContextValue {
   isLaunching: boolean
@@ -64,7 +65,7 @@ export function LaunchProvider({ children }: { children: ReactNode }): React.JSX
     setStatusText(LAUNCH_STAGES[0])
 
     try {
-      const library = await window.api.mods.list()
+      const library = await window.api.mods.list(DEFAULT_GAME_ID)
       const enabledCount = library.mods.filter((mod) => mod.enabled).length
       setProgress(28)
       setStatusText(

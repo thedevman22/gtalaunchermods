@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { DEFAULT_GAME_ID } from '../../../shared/games'
 
 export type StartupPhase = 'loading' | 'exiting' | 'hidden'
 
@@ -26,7 +27,7 @@ export function useStartupSequence(start: boolean): StartupState {
     const steps: { label: string; run: () => Promise<unknown> }[] = [
       { label: 'Locating GTA V installation…', run: () => window.api.game.getPath() },
       { label: 'Checking mod prerequisites…', run: () => window.api.setup.getStatus() },
-      { label: 'Loading mod catalog…', run: () => window.api.catalog.getMods() },
+      { label: 'Loading mod catalog…', run: () => window.api.catalog.getMods(DEFAULT_GAME_ID) },
       { label: 'Preparing your dashboard…', run: () => delay(300) }
     ]
 

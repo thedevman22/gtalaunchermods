@@ -8,12 +8,14 @@ import type {
 import type { ModImportResult, ModListResult, ModSummary } from '../shared/mods'
 import type { OAuthCallbackInfo } from '../shared/profile'
 import type { CatalogResult } from '../shared/catalog'
-import type { DependencyId, SetupStatus } from '../shared/dependencies'
+import type { SetupStatus, DependencyId } from '../shared/dependencies'
+import type { UpdateStatusPayload } from '../shared/update'
 
 export type { LaunchStatus, GamePathSource } from '../shared/game'
 export type { ModSummary, ModListResult, ModImportResult } from '../shared/mods'
 export type { SubscriptionTier, UserProfile, ThemePreference, OAuthCallbackInfo } from '../shared/profile'
 export type { SetupStatus, DependencyId } from '../shared/dependencies'
+export type { UpdateStatus, UpdateStatusPayload } from '../shared/update'
 export type { CatalogMod, ModCategory, ModCatalogSource, CatalogResult } from '../shared/catalog'
 
 export interface GameAPI {
@@ -28,7 +30,7 @@ export interface GameAPI {
 
 export interface ModsAPI {
   getLibraryPath: () => Promise<string>
-  list: () => Promise<ModListResult>
+  list: (gameId?: string) => Promise<ModListResult>
   importMod: (zipPath: string) => Promise<ModImportResult>
   browseImport: () => Promise<ModImportResult>
   enableMod: (modId: string) => Promise<OperationResult>
@@ -52,9 +54,16 @@ export interface SetupAPI {
 }
 
 export interface CatalogAPI {
-  getMods: () => Promise<CatalogResult>
-  install: (catalogId: string) => Promise<ModImportResult>
-  getInstalledMap: () => Promise<Record<string, string>>
+  getMods: (gameId: string) => Promise<CatalogResult>
+  install: (catalogId: string, gameId: string) => Promise<ModImportResult>
+  getInstalledMap: (gameId: string) => Promise<Record<string, string>>
+}
+
+export interface UpdateAPI {
+  check: () => Promise<OperationResult>
+  install: () => Promise<void>
+  getAppVersion: () => Promise<string>
+  onStatusChanged: (callback: (payload: UpdateStatusPayload) => void) => () => void
 }
 
 export interface LauncherAPI {
@@ -64,6 +73,7 @@ export interface LauncherAPI {
   catalog: CatalogAPI
   auth: AuthAPI
   setup: SetupAPI
+  update: UpdateAPI
 }
 
 declare global {

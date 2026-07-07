@@ -7,9 +7,10 @@ import { registerModManagerIpc } from './modManager'
 import { registerAuthBridgeIpc } from './authBridge'
 import { registerCatalogIpc } from './catalogManager'
 import { registerDependencyManagerIpc } from './dependencyManager'
+import { registerUpdateIpc, startAutoUpdater } from './autoUpdater'
 
-function createWindow(): void {
-  const mainWindow = new BrowserWindow({
+function createWindow(): BrowserWindow {
+  const window = new BrowserWindow({
     width: 1280,
     height: 800,
     minWidth: 960,
@@ -26,23 +27,29 @@ function createWindow(): void {
     }
   })
 
-  mainWindow.on('ready-to-show', () => {
-    mainWindow.show()
+  window.on('ready-to-show', () => {
+    window.show()
     void import('./dependencyManager').then(({ promptMissingDependenciesInstall }) => {
-      void promptMissingDependenciesInstall(mainWindow)
+      void promptMissingDependenciesInstall(window)
     })
   })
 
-  mainWindow.webContents.setWindowOpenHandler((details) => {
+  window.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }
   })
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+    window.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+    window.loadFile(join(__dirname, '../renderer/index.html'))
   }
+
+  if (app.isPackaged) {
+    startAutoUpdater(window)
+  }
+
+  return window
 }
 
 app.whenReady().then(() => {
@@ -52,6 +59,7 @@ app.whenReady().then(() => {
   registerCatalogIpc()
   registerAuthBridgeIpc()
   registerDependencyManagerIpc()
+  registerUpdateIpc()
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)

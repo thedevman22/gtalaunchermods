@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import Sidebar from '@renderer/components/Sidebar'
+import UpdateBanner from '@renderer/components/UpdateBanner'
 import SplashScreen from '@renderer/components/SplashScreen'
 import HomePage from '@renderer/pages/HomePage'
 import ModsPage from '@renderer/pages/ModsPage'
@@ -59,6 +60,7 @@ function MainShell(): React.JSX.Element {
       <Sidebar active={activeNav} onNavigate={setActiveNav} />
 
       <main className="flex min-w-0 flex-1 flex-col">
+        <UpdateBanner />
         {isOfflineDev && (
           <div className="border-b border-amber-500/30 bg-amber-500/10 px-6 py-2 text-center text-xs text-amber-200">
             Offline dev mode — add Supabase keys to <code className="text-amber-100">.env</code> to enable login

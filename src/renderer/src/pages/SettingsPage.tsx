@@ -3,6 +3,7 @@ import AnimatedToggle from '@renderer/components/AnimatedToggle'
 import MotionButton from '@renderer/components/MotionButton'
 import { useAuth } from '@renderer/context/AuthContext'
 import type { ThemePreference } from '../../../shared/profile'
+import type { UpdateStatusPayload } from '../../../shared/update'
 import {
   applySyncedPreferences,
   applyThemePreference,
@@ -17,11 +18,39 @@ export default function SettingsPage(): React.JSX.Element {
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [appVersion, setAppVersion] = useState('…')
+  const [updateStatus, setUpdateStatus] = useState<UpdateStatusPayload['status']>('idle')
+  const [updateBusy, setUpdateBusy] = useState(false)
 
   const loadLocalSettings = useCallback(async (): Promise<void> => {
     const pathInfo = await window.api.game.getPath()
     setGamePath(pathInfo.resolvedPath || pathInfo.savedPath || '')
   }, [])
+
+  useEffect(() => {
+    void window.api.update.getAppVersion().then(setAppVersion)
+    return window.api.update.onStatusChanged((payload) => {
+      setUpdateStatus(payload.status)
+    })
+  }, [])
+
+  const handleCheckForUpdates = async (): Promise<void> => {
+    setUpdateBusy(true)
+    setError(null)
+    setMessage(null)
+    try {
+      const result = await window.api.update.check()
+      if (!result.success) {
+        setError(result.error ?? 'Update check failed.')
+        return
+      }
+      if (result.success && updateStatus !== 'ready' && updateStatus !== 'downloading') {
+        setMessage('Update check complete.')
+      }
+    } finally {
+      setUpdateBusy(false)
+    }
+  }
 
   useEffect(() => {
     void loadLocalSettings()
@@ -219,6 +248,32 @@ export default function SettingsPage(): React.JSX.Element {
                 {option}
               </MotionButton>
             ))}
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-launcher-border bg-launcher-surface/60 p-5">
+          <h3 className="text-sm font-semibold text-launcher-text">App updates</h3>
+          <p className="mt-0.5 text-xs text-launcher-muted">
+            Installed builds check GitHub Releases automatically and download updates in the
+            background.
+          </p>
+          <p className="mt-3 font-mono text-xs text-launcher-muted">Version {appVersion}</p>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <MotionButton
+              disabled={updateBusy}
+              onClick={() => void handleCheckForUpdates()}
+              className="rounded-lg border border-launcher-border px-4 py-2 text-xs font-semibold uppercase tracking-wider text-launcher-muted hover:border-launcher-accent/40 hover:text-launcher-accent disabled:opacity-50"
+            >
+              {updateBusy ? 'Checking…' : 'Check for updates'}
+            </MotionButton>
+            {updateStatus === 'ready' ? (
+              <MotionButton
+                onClick={() => void window.api.update.install()}
+                className="rounded-lg bg-gradient-to-r from-launcher-accent to-launcher-accent-dim px-4 py-2 text-xs font-bold uppercase tracking-wider text-launcher-bg"
+              >
+                Restart to update
+              </MotionButton>
+            ) : null}
           </div>
         </div>
       </div>

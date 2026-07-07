@@ -10,6 +10,7 @@ export type ModCatalogSource = 'hosted' | 'external_link'
 
 export interface CatalogMod {
   id: string
+  game_id: string
   name: string
   author: string
   description: string
@@ -22,6 +23,7 @@ export interface CatalogMod {
 }
 
 export interface CatalogResult {
+  game_id: string
   mods: CatalogMod[]
 }
 

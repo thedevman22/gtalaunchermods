@@ -1,0 +1,39 @@
+---
+description: When the user says push or push all changes, commit and push to GitHub automatically
+alwaysApply: true
+---
+
+# Git push on request
+
+When the user says **"push"**, **"push all changes"**, **"push to github"**, or similar, treat it as an explicit request to **commit (if needed) and push to GitHub**.
+
+## Required workflow
+
+Run these in parallel first:
+
+- `git status`
+- `git diff` (staged and unstaged)
+- `git log -3 --oneline`
+- `git branch -vv` (confirm tracking branch)
+
+Then:
+
+1. **Stage** all relevant changes (`git add -A` or targeted adds). Never stage `.env`, `.env.local`, credentials, or other secrets.
+2. **Commit** only if there are staged or unstaged changes worth committing. Use a concise 1–2 sentence message focused on *why*. Pass the message via HEREDOC.
+3. **Push** to the current branch: `git push -u origin HEAD` (use `-u` if upstream is missing).
+4. **Verify** with `git status` and report the commit hash and remote URL.
+
+## Do not
+
+- Skip the push — the user asked to push, not only commit.
+- Use destructive git commands (`push --force`, `reset --hard`, etc.) unless explicitly requested.
+- Update git config.
+- Push `.env` or secret files — warn if the user tried to include them.
+
+## If nothing to commit
+
+If the working tree is clean, still run `git push` in case local commits are unpushed, then confirm everything is up to date with `origin`.
+
+## If push fails
+
+Diagnose (auth, rejected, hooks), fix if possible, and retry. Do not stop after a single failure.

@@ -9,6 +9,7 @@ import SetupChecklist from '@renderer/components/SetupChecklist'
 import { useModSync } from '@renderer/context/ModSyncContext'
 import { staggerContainer } from '@renderer/lib/motion'
 import type { CatalogMod, ModCategory } from '../../../shared/catalog'
+import { DEFAULT_GAME_ID, getGameDefinition } from '../../../shared/games'
 import type { ModSummary } from '../../../preload/index.d'
 import type { SetupStatus } from '../../../shared/dependencies'
 
@@ -19,6 +20,8 @@ interface ModsPageProps {
 }
 
 export default function ModsPage({ onNavigateSettings }: ModsPageProps): React.JSX.Element {
+  const activeGameId = DEFAULT_GAME_ID
+  const game = getGameDefinition(activeGameId)
   const {
     missingMods,
     reconciling,
@@ -48,14 +51,14 @@ export default function ModsPage({ onNavigateSettings }: ModsPageProps): React.J
 
   const loadCatalog = useCallback(async (): Promise<void> => {
     const [catalog, map, library] = await Promise.all([
-      window.api.catalog.getMods(),
-      window.api.catalog.getInstalledMap(),
-      window.api.mods.list()
+      window.api.catalog.getMods(activeGameId),
+      window.api.catalog.getInstalledMap(activeGameId),
+      window.api.mods.list(activeGameId)
     ])
     setCatalogMods(catalog.mods)
     setInstalledMap(map)
     setInstalledMods(library.mods)
-  }, [])
+  }, [activeGameId])
 
   useEffect(() => {
     void loadSetup()
@@ -66,10 +69,14 @@ export default function ModsPage({ onNavigateSettings }: ModsPageProps): React.J
     if (!setupStatus?.modsAllowed) return
     void loadCatalog()
     return window.api.mods.onChanged((payload) => {
-      setInstalledMods(payload.mods)
-      void window.api.catalog.getInstalledMap().then(setInstalledMap)
+      setInstalledMods(
+        payload.mods.filter(
+          (mod) => mod.gameId === activeGameId || (!mod.gameId && activeGameId === DEFAULT_GAME_ID)
+        )
+      )
+      void window.api.catalog.getInstalledMap(activeGameId).then(setInstalledMap)
     })
-  }, [loadCatalog, setupStatus?.modsAllowed])
+  }, [activeGameId, loadCatalog, setupStatus?.modsAllowed])
 
   const modById = useMemo(() => {
     return new Map(installedMods.map((mod) => [mod.id, mod]))
@@ -96,7 +103,7 @@ export default function ModsPage({ onNavigateSettings }: ModsPageProps): React.J
     setBusyCatalogId(catalogId)
     setError(null)
     try {
-      const result = await window.api.catalog.install(catalogId)
+      const result = await window.api.catalog.install(catalogId, activeGameId)
       if (!result.success) {
         setError(result.error ?? 'Install failed.')
         return
@@ -212,9 +219,11 @@ export default function ModsPage({ onNavigateSettings }: ModsPageProps): React.J
       <header className="shrink-0 border-b border-launcher-border/60 bg-launcher-bg/80 px-6 py-4 backdrop-blur-sm">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="font-display text-2xl font-bold text-launcher-text">Mod Catalog</h2>
+            <h2 className="font-display text-2xl font-bold text-launcher-text">
+              {game?.catalogTitle ?? 'Mod Catalog'}
+            </h2>
             <p className="mt-1 text-sm text-launcher-muted">
-              Browse curated story-mode mods or manage your installed library.
+              {game?.catalogSubtitle ?? 'Browse mods or manage your installed library.'}
             </p>
           </div>
 

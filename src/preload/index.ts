@@ -10,6 +10,7 @@ import type { CatalogResult } from '../shared/catalog'
 import type { ModImportResult, ModListResult } from '../shared/mods'
 import type { OAuthCallbackInfo } from '../shared/profile'
 import type { SetupStatus } from '../shared/dependencies'
+import type { UpdateStatusPayload } from '../shared/update'
 
 const gameApi = {
   getPath: (): Promise<GamePathInfo> => ipcRenderer.invoke('game:getPath'),
@@ -31,7 +32,7 @@ const gameApi = {
 
 const modsApi = {
   getLibraryPath: (): Promise<string> => ipcRenderer.invoke('mods:getLibraryPath'),
-  list: (): Promise<ModListResult> => ipcRenderer.invoke('mods:list'),
+  list: (gameId?: string): Promise<ModListResult> => ipcRenderer.invoke('mods:list', gameId),
   importMod: (zipPath: string): Promise<ModImportResult> => ipcRenderer.invoke('mods:import', zipPath),
   browseImport: (): Promise<ModImportResult> => ipcRenderer.invoke('mods:browseImport'),
   enableMod: (modId: string): Promise<OperationResult> => ipcRenderer.invoke('mods:enable', modId),
@@ -88,11 +89,26 @@ const setupApi = {
 }
 
 const catalogApi = {
-  getMods: (): Promise<CatalogResult> => ipcRenderer.invoke('catalog:getMods'),
-  install: (catalogId: string): Promise<ModImportResult> =>
-    ipcRenderer.invoke('catalog:install', catalogId),
-  getInstalledMap: (): Promise<Record<string, string>> =>
-    ipcRenderer.invoke('catalog:getInstalledMap')
+  getMods: (gameId: string): Promise<CatalogResult> => ipcRenderer.invoke('catalog:getMods', gameId),
+  install: (catalogId: string, gameId: string): Promise<ModImportResult> =>
+    ipcRenderer.invoke('catalog:install', catalogId, gameId),
+  getInstalledMap: (gameId: string): Promise<Record<string, string>> =>
+    ipcRenderer.invoke('catalog:getInstalledMap', gameId)
+}
+
+const updateApi = {
+  check: (): Promise<OperationResult> => ipcRenderer.invoke('update:check'),
+  install: (): Promise<void> => ipcRenderer.invoke('update:install'),
+  getAppVersion: (): Promise<string> => ipcRenderer.invoke('update:getAppVersion'),
+  onStatusChanged: (callback: (payload: UpdateStatusPayload) => void): (() => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, payload: UpdateStatusPayload): void => {
+      callback(payload)
+    }
+    ipcRenderer.on('update:status-changed', listener)
+    return () => {
+      ipcRenderer.removeListener('update:status-changed', listener)
+    }
+  }
 }
 
 const api = {
@@ -101,7 +117,8 @@ const api = {
   mods: modsApi,
   catalog: catalogApi,
   auth: authApi,
-  setup: setupApi
+  setup: setupApi,
+  update: updateApi
 }
 
 if (process.contextIsolated) {
