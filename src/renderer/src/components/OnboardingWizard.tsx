@@ -7,6 +7,7 @@ import WaveBackground from '@renderer/components/WaveBackground'
 import WaveDivider from '@renderer/components/WaveDivider'
 import { useAuth } from '@renderer/context/AuthContext'
 import { updateProfilePreferences } from '@renderer/lib/preferencesSync'
+import { getGameCoverImage } from '@renderer/lib/gameImages'
 import { pageTransition } from '@renderer/lib/motion'
 import {
   GTA5_EDITIONS,
@@ -289,6 +290,15 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps):
 
               {step === 1 && (
                 <div>
+                  <div className="relative mb-6 h-36 overflow-hidden rounded-xl border border-launcher-border">
+                    <img
+                      src={getGameCoverImage('gta5')}
+                      alt="Grand Theft Auto V"
+                      className="h-full w-full object-cover object-center"
+                      draggable={false}
+                    />
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-launcher-bg/80 via-transparent to-transparent" />
+                  </div>
                   <h2 className="font-display text-xl font-bold text-launcher-text">Choose your game</h2>
                   <p className="mt-2 text-sm text-launcher-muted">
                     Select the edition you own. ModHarbor configures paths and validation per edition.
@@ -310,8 +320,17 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps):
                         <p className="mt-1 text-xs text-launcher-muted">{option.description}</p>
                       </button>
                     ))}
-                    <div className="rounded-xl border border-launcher-border/60 bg-launcher-elevated/40 p-4 opacity-60">
-                      <div className="flex items-center justify-between gap-3">
+                    <div className="overflow-hidden rounded-xl border border-launcher-border/60 bg-launcher-elevated/40 opacity-75">
+                      <div className="relative h-20">
+                        <img
+                          src={getGameCoverImage('gta6')}
+                          alt="Grand Theft Auto VI"
+                          className="h-full w-full object-cover object-center opacity-50 grayscale"
+                          draggable={false}
+                        />
+                        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-launcher-bg/90 to-transparent" />
+                      </div>
+                      <div className="flex items-center justify-between gap-3 p-4">
                         <div>
                           <p className="font-semibold text-launcher-muted">Grand Theft Auto VI</p>
                           <p className="mt-1 text-xs text-launcher-muted">Coming Soon · Support planned</p>

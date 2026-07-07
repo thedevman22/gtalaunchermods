@@ -1,8 +1,22 @@
 import { createClient } from '@supabase/supabase-js'
 import type { UserProfile } from '../../../shared/profile'
+import {
+  BUILD_BILLING_API_URL,
+  BUILD_SUPABASE_ANON_KEY,
+  BUILD_SUPABASE_URL,
+  BUILD_WEBSITE_URL
+} from '@renderer/config/supabase.build'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
+const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string | undefined) || BUILD_SUPABASE_URL
+const supabaseAnonKey =
+  (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) || BUILD_SUPABASE_ANON_KEY
+
+/** Resolved at build time for installed builds (see scripts/sync-supabase-config.mjs). */
+export const websiteUrl =
+  (import.meta.env.VITE_MODHARBOR_WEBSITE_URL as string | undefined) || BUILD_WEBSITE_URL
+
+export const billingApiUrl =
+  (import.meta.env.VITE_BILLING_API_URL as string | undefined) || BUILD_BILLING_API_URL
 
 const hasPlaceholderConfig =
   supabaseUrl?.includes('your-project') || supabaseAnonKey === 'your-anon-key'
@@ -10,6 +24,9 @@ const hasPlaceholderConfig =
 export const isSupabaseConfigured = Boolean(
   supabaseUrl && supabaseAnonKey && !hasPlaceholderConfig
 )
+
+/** True when .env / build config still has the example values from .env.example */
+export const hasPlaceholderSupabaseConfig = hasPlaceholderConfig
 
 /** Lets you use the launcher locally without a Supabase project during development. */
 export const isOfflineDevMode = import.meta.env.DEV && !isSupabaseConfigured

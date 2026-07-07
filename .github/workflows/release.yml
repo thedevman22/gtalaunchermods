@@ -61,9 +61,18 @@ jobs:
         if: steps.check.outputs.skip != 'true'
         run: npm ci
 
+      - name: Sync Supabase config into bundle
+        if: steps.check.outputs.skip != 'true'
+        run: node scripts/sync-supabase-config.mjs
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_MODHARBOR_WEBSITE_URL: ${{ secrets.VITE_MODHARBOR_WEBSITE_URL }}
+          VITE_BILLING_API_URL: ${{ secrets.VITE_BILLING_API_URL }}
+
       - name: Build and publish Windows installer
         if: steps.check.outputs.skip != 'true'
-        run: npm run build:win:publish
+        run: npm run build && electron-builder --win --config electron-builder.yml --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'

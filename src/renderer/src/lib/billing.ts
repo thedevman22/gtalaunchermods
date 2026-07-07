@@ -1,9 +1,9 @@
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import type { SubscriptionTier, UserProfile } from '../../../shared/profile'
-import { supabase } from '@renderer/lib/supabase'
+import { billingApiUrl, supabase, websiteUrl } from '@renderer/lib/supabase'
 
-const BILLING_API_URL = import.meta.env.VITE_BILLING_API_URL ?? 'http://localhost:4242'
-const WEBSITE_URL = import.meta.env.VITE_MODHARBOR_WEBSITE_URL ?? 'http://localhost:3000'
+const BILLING_API_URL = billingApiUrl || 'http://localhost:4242'
+const WEBSITE_URL = websiteUrl || 'http://localhost:3000'
 
 export { WEBSITE_URL }
 

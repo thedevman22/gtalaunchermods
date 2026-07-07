@@ -1,4 +1,5 @@
 import { Check } from 'lucide-react'
+import GameCover from '@/components/GameCover'
 import PageShell from '@/components/PageShell'
 import ScrollReveal from '@/components/ScrollReveal'
 import { SITE } from '@/lib/constants'
@@ -16,7 +17,11 @@ export default function GtaSupportPage(): React.JSX.Element {
       intro="ModHarbor isn't a general-purpose mod manager. It's built around how Grand Theft Auto installs, mods, and launches."
     >
       <div className="mx-auto max-w-4xl space-y-10">
-        <ScrollReveal className="relative overflow-hidden rounded-2xl border border-accent/30 bg-surface p-8">
+        <ScrollReveal className="relative overflow-hidden rounded-2xl border border-accent/30 bg-surface">
+          <div className="relative h-48 sm:h-56">
+            <GameCover gameId="gta5" alt="Grand Theft Auto V" />
+          </div>
+          <div className="relative p-8">
           <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-accent/5 blur-2xl" />
           <span className="rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-accent">
             Supported Now
@@ -39,9 +44,14 @@ export default function GtaSupportPage(): React.JSX.Element {
               </li>
             ))}
           </ul>
+          </div>
         </ScrollReveal>
 
-        <ScrollReveal className="rounded-2xl border border-border/70 bg-surface/60 p-8">
+        <ScrollReveal className="overflow-hidden rounded-2xl border border-border/70 bg-surface/60">
+          <div className="relative h-48 sm:h-56">
+            <GameCover gameId="gta6" alt="Grand Theft Auto VI" locked />
+          </div>
+          <div className="p-8">
           <span className="rounded-full border border-border bg-elevated px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-muted">
             Coming Soon
           </span>
@@ -60,6 +70,7 @@ export default function GtaSupportPage(): React.JSX.Element {
             </a>{' '}
             for updates — there is no ETA yet.
           </p>
+          </div>
         </ScrollReveal>
 
         <ScrollReveal className="rounded-2xl border border-border bg-surface/60 p-8">

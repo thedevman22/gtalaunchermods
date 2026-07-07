@@ -1,4 +1,5 @@
 import { SUPPORTED_GAMES } from '@/lib/constants'
+import GameCover from '@/components/GameCover'
 import ScrollReveal from '@/components/ScrollReveal'
 import WaveDivider from '@/components/WaveDivider'
 
@@ -19,28 +20,35 @@ export default function SupportedGames(): React.JSX.Element {
               <article
                 key={game.id}
                 className={[
-                  'relative overflow-hidden rounded-2xl border bg-surface p-8 text-center',
+                  'group relative overflow-hidden rounded-2xl border bg-surface text-center',
                   supported
                     ? 'border-accent/30 shadow-lg shadow-sky-400/10'
-                    : 'border-border/70 opacity-80'
+                    : 'border-border/70 opacity-90'
                 ].join(' ')}
               >
-                <span
-                  className={[
-                    'rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider',
-                    supported
-                      ? 'border border-accent/30 bg-accent/10 text-accent'
-                      : 'border border-border bg-elevated text-muted'
-                  ].join(' ')}
-                >
-                  {supported ? 'Supported Now' : 'Coming Soon'}
-                </span>
-                <h3 className="mt-4 font-display text-xl font-bold sm:text-2xl">{game.title}</h3>
-                <p className="mt-3 text-sm text-muted">{game.tagline}</p>
+                <div className="relative h-44 sm:h-48">
+                  <GameCover
+                    gameId={game.id}
+                    alt={game.title}
+                    locked={!supported}
+                    className="[&_img]:group-hover:scale-[1.03] [&_img]:transition-transform [&_img]:duration-300"
+                  />
+                </div>
 
-                {supported ? (
-                  <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-accent/5 blur-2xl" />
-                ) : null}
+                <div className="p-6 pt-5">
+                  <span
+                    className={[
+                      'rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider',
+                      supported
+                        ? 'border border-accent/30 bg-accent/10 text-accent'
+                        : 'border border-border bg-elevated text-muted'
+                    ].join(' ')}
+                  >
+                    {supported ? 'Supported Now' : 'Coming Soon'}
+                  </span>
+                  <h3 className="mt-4 font-display text-xl font-bold sm:text-2xl">{game.title}</h3>
+                  <p className="mt-3 text-sm text-muted">{game.tagline}</p>
+                </div>
               </article>
             )
           })}

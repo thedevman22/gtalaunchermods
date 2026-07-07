@@ -1,6 +1,6 @@
 {
   "name": "modharbor",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "ModHarbor — manage and launch your game mods",
   "main": "./out/main/index.js",
   "author": "ModHarbor",
@@ -23,8 +23,9 @@
     "build": "npm run typecheck && electron-vite build",
     "postinstall": "electron-builder install-app-deps",
     "build:unpack": "node scripts/verify-packaging.mjs && npm run build && electron-builder --dir --config electron-builder.yml",
-    "build:win": "node scripts/verify-packaging.mjs && npm run build && electron-builder --win --config electron-builder.yml --publish never",
-    "build:win:publish": "node scripts/verify-packaging.mjs && npm run build && electron-builder --win --config electron-builder.yml --publish always",
+    "build:win": "node scripts/verify-packaging.mjs && node scripts/sync-supabase-config.mjs && npm run build && electron-builder --win --config electron-builder.yml --publish never",
+    "build:win:publish": "node scripts/verify-packaging.mjs && node scripts/sync-supabase-config.mjs && npm run build && electron-builder --win --config electron-builder.yml --publish always",
+    "config:sync": "node scripts/sync-supabase-config.mjs",
     "build:mac": "npm run build && electron-builder --mac --config electron-builder.yml --publish never",
     "build:linux": "npm run build && electron-builder --linux --config electron-builder.yml --publish never",
     "version:bump": "node scripts/bump-version.mjs"

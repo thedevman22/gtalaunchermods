@@ -10,7 +10,7 @@ import {
 import type { Session, User } from '@supabase/supabase-js'
 import type { SubscriptionTier, UserProfile } from '../../../shared/profile'
 import { hasTier, isPremiumTier } from '../../../shared/profile'
-import { fetchUserProfile, isOfflineDevMode, isSupabaseConfigured, OFFLINE_DEV_PROFILE, supabase } from '@renderer/lib/supabase'
+import { fetchUserProfile, hasPlaceholderSupabaseConfig, isOfflineDevMode, isSupabaseConfigured, OFFLINE_DEV_PROFILE, supabase } from '@renderer/lib/supabase'
 import { waitForTierUpgrade as pollForTierUpgrade } from '@renderer/lib/billing'
 
 interface AuthContextValue {
@@ -298,20 +298,48 @@ export function AuthProvider({ children }: { children: ReactNode }): React.JSX.E
   )
 
   if (!isSupabaseConfigured && !isOfflineDevMode && !loading) {
+    const isPackaged = !import.meta.env.DEV
     return (
       <div className="flex h-full items-center justify-center bg-launcher-bg p-8">
-        <div className="max-w-md rounded-xl border border-launcher-border bg-launcher-surface p-6 text-center">
-          <h1 className="text-lg font-bold text-launcher-text">Supabase not configured</h1>
-          <p className="mt-2 text-sm text-launcher-muted">
-            Copy <code className="text-launcher-accent">.env.example</code> to{' '}
-            <code className="text-launcher-accent">.env</code> and set your Supabase URL and anon key.
-          </p>
-          <ol className="mt-4 space-y-2 text-left text-xs text-launcher-muted">
-            <li>1. Create a project at supabase.com</li>
-            <li>2. Run <code className="text-launcher-accent">supabase/migrations/001_profiles.sql</code></li>
-            <li>3. Copy Project URL + anon key from Settings → API</li>
-            <li>4. Restart the launcher with <code className="text-launcher-accent">npm run dev</code></li>
-          </ol>
+        <div className="max-w-lg rounded-xl border border-launcher-border bg-launcher-surface p-6 text-center">
+          <h1 className="text-lg font-bold text-launcher-text">Sign-in not available</h1>
+          {hasPlaceholderSupabaseConfig ? (
+            <>
+              <p className="mt-2 text-sm text-launcher-muted">
+                Supabase credentials are still set to the{' '}
+                <strong className="text-launcher-text">.env.example placeholders</strong>, not your real
+                project. The installed app is built without valid keys until this is fixed.
+              </p>
+              <ol className="mt-4 space-y-2 text-left text-xs text-launcher-muted">
+                <li>
+                  1. Open <code className="text-launcher-accent">.env</code> in the project root
+                </li>
+                <li>
+                  2. Replace <code className="text-launcher-accent">VITE_SUPABASE_URL</code> and{' '}
+                  <code className="text-launcher-accent">VITE_SUPABASE_ANON_KEY</code> with values from
+                  Supabase → Settings → API
+                </li>
+                <li>
+                  3. Run <code className="text-launcher-accent">npm run config:sync</code>, then ship a
+                  new release (or use <code className="text-launcher-accent">npm run dev</code> locally)
+                </li>
+              </ol>
+            </>
+          ) : isPackaged ? (
+            <p className="mt-2 text-sm text-launcher-muted">
+              This installer was built without Supabase credentials. Add{' '}
+              <code className="text-launcher-accent">VITE_SUPABASE_URL</code> and{' '}
+              <code className="text-launcher-accent">VITE_SUPABASE_ANON_KEY</code> to GitHub Actions
+              secrets, run <code className="text-launcher-accent">npm run config:sync</code>, and publish a
+              new release.
+            </p>
+          ) : (
+            <p className="mt-2 text-sm text-launcher-muted">
+              Copy <code className="text-launcher-accent">.env.example</code> to{' '}
+              <code className="text-launcher-accent">.env</code> and set your Supabase URL and anon key,
+              then restart with <code className="text-launcher-accent">npm run dev</code>.
+            </p>
+          )}
         </div>
       </div>
     )
