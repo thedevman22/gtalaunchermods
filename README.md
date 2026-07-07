@@ -4,16 +4,15 @@ Desktop mod launcher for GTA V (Electron) plus a marketing site (Next.js).
 
 ## Vercel deployment (landing site only)
 
-The **Root Directory** must be `landing`. If Vercel builds from the repo root, it will try to build the Electron app and fail.
-
-1. Vercel → your project → **Settings** → **General**
-2. **Root Directory** → Edit → enter `landing` → Save
-3. **Deployments** → Redeploy the latest commit
+Root `vercel.json` builds only the `landing/` Next.js site as a static export (`landing/out`).
+You do **not** need to set a Root Directory in Vercel — redeploy after pushing.
 
 Optional env vars (Project → Settings → Environment Variables):
 
 - `NEXT_PUBLIC_DOWNLOAD_URL` — GitHub release `.exe` URL
 - `NEXT_PUBLIC_DISCORD_URL` — Discord invite link
+
+> Env vars must be set in Vercel before build; they are baked into the static export at build time.
 
 ## Local development
 

@@ -5,6 +5,7 @@ import { fileURLToPath } from "url";
 const landingDir = path.dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
+  output: 'export',
   turbopack: {
     root: landingDir
   }
