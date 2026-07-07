@@ -15,13 +15,15 @@ export default function SettingsPage(): React.JSX.Element {
   const { user, profile, isOfflineDev, refreshProfile } = useAuth()
   const [gamePath, setGamePath] = useState('')
   const [syncEnabled, setSyncEnabled] = useState(false)
-  const [theme, setTheme] = useState<ThemePreference>('light')
+  const [theme, setTheme] = useState<ThemePreference>('dark')
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [appVersion, setAppVersion] = useState('…')
   const [updateStatus, setUpdateStatus] = useState<UpdateStatusPayload['status']>('idle')
+  const [updateVersion, setUpdateVersion] = useState<string | undefined>(undefined)
   const [updateBusy, setUpdateBusy] = useState(false)
+  const [autoUpdate, setAutoUpdate] = useState(true)
 
   const loadLocalSettings = useCallback(async (): Promise<void> => {
     const pathInfo = await window.api.game.getPath()
@@ -30,10 +32,21 @@ export default function SettingsPage(): React.JSX.Element {
 
   useEffect(() => {
     void window.api.update.getAppVersion().then(setAppVersion)
+    void window.api.update.getSettings().then((settings) => setAutoUpdate(settings.autoUpdate))
+    void window.api.update.getStatus().then((payload) => {
+      setUpdateStatus(payload.status)
+      setUpdateVersion(payload.version)
+    })
     return window.api.update.onStatusChanged((payload) => {
       setUpdateStatus(payload.status)
+      setUpdateVersion(payload.version)
     })
   }, [])
+
+  const handleAutoUpdateToggle = async (enabled: boolean): Promise<void> => {
+    setAutoUpdate(enabled)
+    await window.api.update.setAutoUpdate(enabled)
+  }
 
   const handleCheckForUpdates = async (): Promise<void> => {
     setUpdateBusy(true)
@@ -283,12 +296,33 @@ export default function SettingsPage(): React.JSX.Element {
         </div>
 
         <div className="rounded-xl border border-launcher-border bg-launcher-surface/60 p-5">
-          <h3 className="text-sm font-semibold text-launcher-text">App updates</h3>
-          <p className="mt-0.5 text-xs text-launcher-muted">
-            Installed builds check GitHub Releases automatically and download updates in the
-            background.
-          </p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h3 className="text-sm font-semibold text-launcher-text">Updates</h3>
+              <p className="mt-0.5 text-xs text-launcher-muted">
+                Installed builds check GitHub Releases in the background. Update checks never
+                interrupt app usage.
+              </p>
+            </div>
+          </div>
+
           <p className="mt-3 font-mono text-xs text-launcher-muted">Version {appVersion}</p>
+
+          <div className="mt-4 flex items-start justify-between gap-4 rounded-lg border border-launcher-border/70 bg-launcher-elevated/40 p-4">
+            <div>
+              <p className="text-xs font-semibold text-launcher-text">Automatic updates</p>
+              <p className="mt-1 text-xs text-launcher-muted">
+                {autoUpdate
+                  ? 'Updates download in the background and apply on restart or next quit.'
+                  : 'You will be notified when an update is available and choose when to install it.'}
+              </p>
+            </div>
+            <AnimatedToggle
+              enabled={autoUpdate}
+              onChange={(enabled) => void handleAutoUpdateToggle(enabled)}
+            />
+          </div>
+
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <MotionButton
               disabled={updateBusy}
@@ -297,6 +331,17 @@ export default function SettingsPage(): React.JSX.Element {
             >
               {updateBusy ? 'Checking…' : 'Check for updates'}
             </MotionButton>
+            {updateStatus === 'available' && !autoUpdate ? (
+              <MotionButton
+                onClick={() => void window.api.update.download()}
+                className="rounded-lg bg-gradient-to-r from-launcher-accent to-launcher-accent-dim px-4 py-2 text-xs font-bold uppercase tracking-wider text-launcher-bg"
+              >
+                Download & Install{updateVersion ? ` v${updateVersion}` : ''}
+              </MotionButton>
+            ) : null}
+            {updateStatus === 'downloading' ? (
+              <span className="text-xs text-launcher-muted">Downloading update…</span>
+            ) : null}
             {updateStatus === 'ready' ? (
               <MotionButton
                 onClick={() => void window.api.update.install()}

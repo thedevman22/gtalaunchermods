@@ -9,6 +9,9 @@ interface ModDropZoneProps {
   onAutoInstallChange: (value: boolean) => void
   isPremium: boolean
   onUpgrade?: () => void
+  /** Game path not set — importing is unavailable. */
+  disabled?: boolean
+  disabledReason?: string
 }
 
 interface ElectronFile extends File {
@@ -22,14 +25,18 @@ export default function ModDropZone({
   autoInstall,
   onAutoInstallChange,
   isPremium,
-  onUpgrade
+  onUpgrade,
+  disabled = false,
+  disabledReason
 }: ModDropZoneProps): React.JSX.Element {
   const [isDragging, setIsDragging] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const handleDragOver = (event: React.DragEvent): void => {
     event.preventDefault()
-    setIsDragging(true)
+    if (!disabled) {
+      setIsDragging(true)
+    }
   }
 
   const handleDragLeave = (): void => {
@@ -44,6 +51,7 @@ export default function ModDropZone({
   const handleDrop = async (event: React.DragEvent): Promise<void> => {
     event.preventDefault()
     setIsDragging(false)
+    if (disabled) return
 
     const file = event.dataTransfer.files[0] as ElectronFile | undefined
     if (file?.path) {
@@ -65,11 +73,14 @@ export default function ModDropZone({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={(event) => void handleDrop(event)}
+        title={disabled ? disabledReason : undefined}
         className={[
           'relative rounded-xl border-2 border-dashed p-8 text-center transition-all',
-          isDragging
-            ? 'border-launcher-accent bg-launcher-accent/10'
-            : 'border-launcher-border bg-launcher-elevated/30 hover:border-launcher-accent/40 hover:bg-launcher-elevated/50'
+          disabled
+            ? 'border-launcher-border/60 bg-launcher-elevated/20 opacity-60'
+            : isDragging
+              ? 'border-launcher-accent bg-launcher-accent/10'
+              : 'border-launcher-border bg-launcher-elevated/30 hover:border-launcher-accent/40 hover:bg-launcher-elevated/50'
         ].join(' ')}
       >
         <input
@@ -93,7 +104,8 @@ export default function ModDropZone({
 
         <button
           type="button"
-          disabled={busy}
+          disabled={busy || disabled}
+          title={disabled ? disabledReason : undefined}
           onClick={() => void onBrowse()}
           className="mt-4 rounded-lg border border-launcher-accent/40 bg-launcher-accent/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-launcher-accent transition-colors hover:bg-launcher-accent/20 disabled:opacity-50"
         >

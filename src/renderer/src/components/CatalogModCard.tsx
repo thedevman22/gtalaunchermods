@@ -16,6 +16,8 @@ interface CatalogModCardProps extends Omit<HTMLMotionProps<'article'>, 'onToggle
   installLocked?: boolean
   profileMode?: boolean
   inProfile?: boolean
+  /** Game path not set — install/enable actions are unavailable. */
+  actionsLocked?: boolean
   onInstall: (catalogId: string) => void
   onToggleMod: (modId: string, enabled: boolean) => void
 }
@@ -29,12 +31,14 @@ export default function CatalogModCard({
   installLocked = false,
   profileMode = false,
   inProfile = false,
+  actionsLocked = false,
   onInstall,
   onToggleMod,
   ...motionProps
 }: CatalogModCardProps): React.JSX.Element {
   const isExternal = mod.source === 'external_link'
   const isPlaceholder = isCatalogModPlaceholder(mod)
+  const lockedTitle = actionsLocked ? 'Set your game folder first' : undefined
 
   return (
     <motion.article
@@ -114,7 +118,8 @@ export default function CatalogModCard({
             <InstalledBadge />
             <AnimatedToggle
               enabled={profileMode ? inProfile : enabled}
-              disabled={busy}
+              disabled={busy || actionsLocked}
+              title={lockedTitle}
               label={
                 profileMode
                   ? inProfile
@@ -136,7 +141,8 @@ export default function CatalogModCard({
           </div>
         ) : (
           <MotionButton
-            disabled={busy}
+            disabled={busy || actionsLocked}
+            title={lockedTitle}
             onClick={() => onInstall(mod.id)}
             className={[
               'rounded-xl px-5 py-2.5 text-xs font-bold uppercase tracking-wider disabled:opacity-50',

@@ -32,7 +32,9 @@ function MainShell(): React.JSX.Element {
 
   useEffect(() => {
     void window.api.setup.getStatus().then((status) => {
-      if (!status.setupComplete) {
+      // Only steer to the checklist when a game folder exists but deps are
+      // missing. With setup skipped, Home shows the "Finish setup" card.
+      if (status.gamePathConfigured && !status.setupComplete) {
         setActiveNav('mods')
       }
     })
@@ -64,8 +66,8 @@ function MainShell(): React.JSX.Element {
       <main className="flex min-w-0 flex-1 flex-col">
         <UpdateBanner />
         {isOfflineDev && (
-          <div className="border-b border-amber-500/30 bg-amber-500/10 px-6 py-2 text-center text-xs text-amber-700">
-            Offline dev mode — add Supabase keys to <code className="text-amber-800">.env</code> to enable login
+          <div className="border-b border-amber-500/30 bg-amber-500/10 px-6 py-2 text-center text-xs text-amber-200">
+            Offline dev mode — add Supabase keys to <code className="text-amber-100">.env</code> to enable login
           </div>
         )}
         <header className="flex h-12 shrink-0 items-center border-b border-launcher-border/60 px-6">

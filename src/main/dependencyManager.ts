@@ -170,8 +170,9 @@ export async function promptMissingDependenciesInstall(window: BrowserWindow): P
     return
   }
 
+  // No game path yet (user skipped setup) — the dashboard shows a
+  // non-intrusive "Finish setup" card instead of forcing the checklist open.
   if (!status.gamePathConfigured) {
-    window.webContents.send('setup:openChecklist')
     return
   }
 

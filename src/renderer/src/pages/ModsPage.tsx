@@ -84,9 +84,10 @@ export default function ModsPage({ onNavigateSettings }: ModsPageProps): React.J
   }, [selectedProfileId, profiles, loadProfileMods])
 
   const profileMode = Boolean(selectedProfileId)
+  const gamePathMissing = setupStatus !== null && !setupStatus.gamePathConfigured
 
   useEffect(() => {
-    if (!setupStatus?.modsAllowed) return
+    if (!setupStatus) return
     void loadCatalog()
     const unsubMods = window.api.mods.onChanged((payload) => {
       setInstalledMods(
@@ -103,7 +104,7 @@ export default function ModsPage({ onNavigateSettings }: ModsPageProps): React.J
       unsubMods()
       unsubCatalog()
     }
-  }, [activeGameId, loadCatalog, setupStatus?.modsAllowed])
+  }, [activeGameId, loadCatalog, setupStatus])
 
   const modById = useMemo(() => {
     return new Map(installedMods.map((mod) => [mod.id, mod]))
@@ -251,7 +252,10 @@ export default function ModsPage({ onNavigateSettings }: ModsPageProps): React.J
     )
   }
 
-  if (!setupStatus.modsAllowed) {
+  // Deps missing but the game folder is known — show the checklist as before.
+  // With no game folder at all (skipped setup) the catalog stays browsable and
+  // only install/enable actions are locked.
+  if (setupStatus.gamePathConfigured && !setupStatus.modsAllowed) {
     return (
       <SetupChecklist
         onComplete={() => void loadSetup()}
@@ -376,6 +380,7 @@ export default function ModsPage({ onNavigateSettings }: ModsPageProps): React.J
                         installLocked={!isPremium && mod.source !== 'external_link'}
                         profileMode={profileMode}
                         inProfile={libraryModId ? profileModIds.has(libraryModId) : false}
+                        actionsLocked={gamePathMissing}
                         onInstall={(catalogId) => void handleCatalogInstall(catalogId)}
                         onToggleMod={(modId, enabled) => void handleToggle(modId, enabled)}
                       />
@@ -393,7 +398,8 @@ export default function ModsPage({ onNavigateSettings }: ModsPageProps): React.J
               {installedMods.length} installed mod{installedMods.length === 1 ? '' : 's'}
             </p>
             <MotionButton
-              disabled={importing}
+              disabled={importing || gamePathMissing}
+              title={gamePathMissing ? 'Set your game folder first' : undefined}
               onClick={() => void handleBrowseImport()}
               className="rounded-xl border border-launcher-accent/40 bg-launcher-accent/10 px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-launcher-accent hover:bg-launcher-accent/20 disabled:opacity-50"
             >
@@ -428,6 +434,7 @@ export default function ModsPage({ onNavigateSettings }: ModsPageProps): React.J
                   busy={busyModId === mod.id || importing}
                   profileMode={profileMode}
                   inProfile={profileModIds.has(mod.id)}
+                  actionsLocked={gamePathMissing}
                   onToggleMod={(modId, enabled) => void handleToggle(modId, enabled)}
                   onDelete={(modId) => void handleDelete(modId)}
                 />

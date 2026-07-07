@@ -11,6 +11,8 @@ interface InstalledModRowProps extends Omit<HTMLMotionProps<'article'>, 'onToggl
   onDelete: (modId: string) => void
   inProfile?: boolean
   profileMode?: boolean
+  /** Game path not set — enable/disable is unavailable. */
+  actionsLocked?: boolean
 }
 
 export default function InstalledModRow({
@@ -20,6 +22,7 @@ export default function InstalledModRow({
   onDelete,
   inProfile,
   profileMode = false,
+  actionsLocked = false,
   ...motionProps
 }: InstalledModRowProps): React.JSX.Element {
   const enabled = profileMode ? Boolean(inProfile) : mod.enabled
@@ -56,7 +59,8 @@ export default function InstalledModRow({
       <div className="flex shrink-0 items-center gap-4">
         <AnimatedToggle
           enabled={enabled}
-          disabled={busy}
+          disabled={busy || actionsLocked}
+          title={actionsLocked ? 'Set your game folder first' : undefined}
           label={enabled ? onLabel : offLabel}
           onChange={(next) => onToggleMod(mod.id, next)}
         />

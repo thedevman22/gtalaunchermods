@@ -97,7 +97,7 @@ export default function TierUpgradeCelebration({
 
         <MotionButton
           onClick={onDismiss}
-          className="relative mt-8 w-full rounded-xl bg-gradient-to-r from-launcher-accent to-launcher-accent-dim px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-[0_0_24px_var(--color-launcher-glow)]"
+          className="relative mt-8 w-full rounded-xl bg-gradient-to-r from-launcher-accent to-launcher-accent-dim px-6 py-3 text-xs font-bold uppercase tracking-wider text-launcher-bg shadow-[0_0_24px_var(--color-launcher-glow)]"
         >
           Start modding
         </MotionButton>

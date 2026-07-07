@@ -8,6 +8,7 @@ interface ModProfileCardProps {
   profile: ModProfileSummary
   isActive?: boolean
   isLaunching?: boolean
+  launchDisabled?: boolean
   onLaunch: () => void
   onDelete?: () => void
 }
@@ -16,6 +17,7 @@ export default function ModProfileCard({
   profile,
   isActive = false,
   isLaunching = false,
+  launchDisabled = false,
   onLaunch,
   onDelete
 }: ModProfileCardProps): React.JSX.Element {
@@ -25,7 +27,9 @@ export default function ModProfileCard({
       whileHover={{ y: -2, transition: { duration: MOTION_DURATION, ease: MOTION_EASE } }}
       className={[
         'wave-card relative flex flex-col overflow-hidden rounded-2xl border bg-launcher-surface p-5 shadow-sm',
-        isActive ? 'border-launcher-accent shadow-sky-100' : 'border-launcher-border shadow-sky-50'
+        isActive
+          ? 'border-launcher-accent shadow-[0_0_18px_var(--color-launcher-glow)]'
+          : 'border-launcher-border shadow-black/20'
       ].join(' ')}
     >
       <div className="flex items-start justify-between gap-3">
@@ -48,9 +52,10 @@ export default function ModProfileCard({
       </div>
 
       <MotionButton
-        disabled={isLaunching}
+        disabled={isLaunching || launchDisabled}
+        title={launchDisabled ? 'Set your game folder first' : undefined}
         onClick={onLaunch}
-        className="wave-button mt-5 w-full rounded-xl bg-gradient-to-r from-launcher-accent to-launcher-accent-dim py-3 text-sm font-bold uppercase tracking-wider text-white shadow-[0_4px_20px_var(--color-launcher-glow)] disabled:opacity-60"
+        className="wave-button mt-5 w-full rounded-xl bg-gradient-to-r from-launcher-accent to-launcher-accent-dim py-3 text-sm font-bold uppercase tracking-wider text-launcher-bg shadow-[0_4px_20px_var(--color-launcher-glow)] disabled:opacity-60"
       >
         {isLaunching ? 'Launching…' : 'Launch'}
       </MotionButton>

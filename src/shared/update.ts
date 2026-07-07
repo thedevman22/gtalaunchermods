@@ -11,4 +11,10 @@ export interface UpdateStatusPayload {
   version?: string
   progress?: number
   message?: string
+  /** Whether automatic updates were enabled when this status was emitted. */
+  autoUpdate?: boolean
+}
+
+export interface UpdateSettings {
+  autoUpdate: boolean
 }

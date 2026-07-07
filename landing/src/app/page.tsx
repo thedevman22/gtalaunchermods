@@ -1,24 +1,17 @@
-import SupportedGames from '@/components/SupportedGames'
 import Hero from '@/components/Hero'
 import HowItWorks from '@/components/HowItWorks'
-import Features from '@/components/Features'
+import SupportedGames from '@/components/SupportedGames'
 import Pricing from '@/components/Pricing'
-import TrustSection from '@/components/TrustSection'
-import StoryModeBanner from '@/components/StoryModeBanner'
-import InstallSection, { Footer } from '@/components/Footer'
+import Footer from '@/components/Footer'
 
 export default function Home(): React.JSX.Element {
   return (
     <>
       <main>
         <Hero />
-        <StoryModeBanner />
-        <SupportedGames />
         <HowItWorks />
-        <Features />
+        <SupportedGames />
         <Pricing />
-        <TrustSection />
-        <InstallSection />
       </main>
       <Footer />
     </>

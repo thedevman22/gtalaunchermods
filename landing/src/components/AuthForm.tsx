@@ -73,7 +73,7 @@ export default function AuthForm({ mode }: AuthFormProps): React.JSX.Element {
     return (
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 shadow-[0_8px_24px_rgba(43,159,212,0.2)]">
+          <div className="mx-auto mb-4 shadow-[0_8px_24px_rgba(56,189,248,0.25)]">
             <ModHarborLogo size={56} className="rounded-xl" />
           </div>
           <h1 className="text-2xl font-bold">You&apos;re signed in</h1>
@@ -89,7 +89,7 @@ export default function AuthForm({ mode }: AuthFormProps): React.JSX.Element {
           </p>
           <a
             href={SITE.downloadUrl}
-            className="mt-6 block rounded-xl bg-gradient-to-r from-accent to-accent-dim py-3 text-center text-sm font-bold uppercase tracking-wider text-white shadow-[0_4px_20px_rgba(43,159,212,0.25)] transition-transform hover:scale-[1.01]"
+            className="mt-6 block rounded-xl bg-gradient-to-r from-accent to-accent-dim py-3 text-center text-sm font-bold uppercase tracking-wider text-bg shadow-[0_4px_20px_rgba(56,189,248,0.3)] transition-transform hover:scale-[1.01]"
           >
             Download launcher
           </a>
@@ -108,7 +108,7 @@ export default function AuthForm({ mode }: AuthFormProps): React.JSX.Element {
   return (
     <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 shadow-[0_8px_24px_rgba(43,159,212,0.2)]">
+          <div className="mx-auto mb-4 shadow-[0_8px_24px_rgba(56,189,248,0.25)]">
             <ModHarborLogo size={56} className="rounded-xl" />
           </div>
           <h1 className="text-2xl font-bold">{SITE.name}</h1>
@@ -173,7 +173,7 @@ export default function AuthForm({ mode }: AuthFormProps): React.JSX.Element {
           <button
             type="submit"
             disabled={submitting || loading || !isConfigured}
-            className="w-full rounded-xl bg-gradient-to-r from-accent to-accent-dim py-3 text-sm font-bold uppercase tracking-wider text-white shadow-[0_4px_20px_rgba(43,159,212,0.25)] transition-transform hover:scale-[1.01] disabled:opacity-50"
+            className="w-full rounded-xl bg-gradient-to-r from-accent to-accent-dim py-3 text-sm font-bold uppercase tracking-wider text-bg shadow-[0_4px_20px_rgba(56,189,248,0.3)] transition-transform hover:scale-[1.01] disabled:opacity-50"
           >
             {submitting ? 'Please wait…' : isLogin ? 'Sign In' : 'Create Account'}
           </button>

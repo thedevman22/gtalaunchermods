@@ -158,7 +158,7 @@ export default function PricingCheckout(): React.JSX.Element {
             <p className="text-sm text-muted">Sign in with the same account you use in the desktop app.</p>
             <Link
               href="/sign-in?redirect=/pricing"
-              className="mt-4 inline-block rounded-xl bg-gradient-to-r from-accent to-accent-dim px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white"
+              className="mt-4 inline-block rounded-xl bg-gradient-to-r from-accent to-accent-dim px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-bg"
             >
               Sign in to upgrade
             </Link>
@@ -172,12 +172,12 @@ export default function PricingCheckout(): React.JSX.Element {
               className={[
                 'relative flex flex-col rounded-2xl border p-6 lg:p-8',
                 tier.highlight
-                  ? 'border-accent/50 bg-accent/5 shadow-[0_4px_30px_rgba(43,159,212,0.12)]'
+                  ? 'border-accent/50 bg-accent/5 shadow-[0_4px_30px_rgba(56,189,248,0.15)]'
                   : 'border-border bg-surface/40'
               ].join(' ')}
             >
               {tier.highlight ? (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-accent px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-accent px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-bg">
                   Most popular
                 </span>
               ) : null}
@@ -220,7 +220,7 @@ export default function PricingCheckout(): React.JSX.Element {
                   className={[
                     'mt-8 rounded-xl py-3 text-xs font-bold uppercase tracking-wider transition-all disabled:cursor-not-allowed disabled:opacity-50',
                     tier.highlight
-                      ? 'wave-button bg-gradient-to-r from-accent to-accent-dim text-white shadow-[0_4px_20px_rgba(43,159,212,0.25)] hover:scale-[1.02]'
+                      ? 'wave-button bg-gradient-to-r from-accent to-accent-dim text-bg shadow-[0_4px_20px_rgba(56,189,248,0.3)] hover:scale-[1.02]'
                       : 'border border-border bg-elevated text-text hover:border-accent/40'
                   ].join(' ')}
                 >

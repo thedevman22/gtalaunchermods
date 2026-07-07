@@ -6,16 +6,18 @@ interface AnimatedToggleProps {
   disabled?: boolean
   onChange: (next: boolean) => void
   label?: string
+  title?: string
 }
 
 export default function AnimatedToggle({
   enabled,
   disabled,
   onChange,
-  label
+  label,
+  title
 }: AnimatedToggleProps): React.JSX.Element {
   return (
-    <label className="flex items-center gap-2.5">
+    <label className="flex items-center gap-2.5" title={title}>
       {label ? (
         <span className="text-[10px] font-semibold uppercase tracking-wider text-launcher-muted">
           {label}

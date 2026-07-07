@@ -32,6 +32,7 @@ interface LauncherStoreSchema {
   onboardingComplete: boolean
   subscriptionTier: SubscriptionTier
   lastDeployedProfileId: string
+  autoUpdateEnabled: boolean
 }
 
 const COMMANDLINE_CONTENT = '-scOfflineOnly'
@@ -63,7 +64,8 @@ function getStore(): StoreType<LauncherStoreSchema> {
         gameEdition: 'legacy',
         onboardingComplete: false,
         subscriptionTier: 'free',
-        lastDeployedProfileId: ''
+        lastDeployedProfileId: '',
+        autoUpdateEnabled: true
       }
     })
   }
@@ -162,6 +164,14 @@ export function getLastDeployedProfileId(): string {
 
 export function setLastDeployedProfileId(profileId: string): void {
   getStore().set('lastDeployedProfileId', profileId)
+}
+
+export function getAutoUpdateEnabled(): boolean {
+  return Boolean(getStore().get('autoUpdateEnabled', true))
+}
+
+export function setAutoUpdateEnabled(enabled: boolean): void {
+  getStore().set('autoUpdateEnabled', enabled)
 }
 
 export function validateGamePath(

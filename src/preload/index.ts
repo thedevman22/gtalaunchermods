@@ -13,7 +13,7 @@ import type { SetupStatus } from '../shared/dependencies'
 import type { OnboardingState } from '../shared/onboarding'
 import type { ModProfileLimits, ModProfileManifest, ModProfileSummary } from '../shared/modProfiles'
 import type { SubscriptionTier } from '../shared/profile'
-import type { UpdateStatusPayload } from '../shared/update'
+import type { UpdateSettings, UpdateStatusPayload } from '../shared/update'
 
 const gameApi = {
   getPath: (): Promise<GamePathInfo> => ipcRenderer.invoke('game:getPath'),
@@ -114,6 +114,7 @@ const onboardingApi = {
   setGameSetup: (gameId: string, edition: string): Promise<OperationResult> =>
     ipcRenderer.invoke('onboarding:setGameSetup', gameId, edition),
   complete: (): Promise<OperationResult> => ipcRenderer.invoke('onboarding:complete'),
+  skip: (): Promise<OperationResult> => ipcRenderer.invoke('onboarding:skip'),
   reset: (): Promise<OperationResult> => ipcRenderer.invoke('onboarding:reset'),
   onChanged: (callback: (payload: OnboardingState) => void): (() => void) => {
     const listener = (_event: Electron.IpcRendererEvent, payload: OnboardingState): void => {
@@ -170,8 +171,13 @@ const appApi = {
 
 const updateApi = {
   check: (): Promise<OperationResult> => ipcRenderer.invoke('update:check'),
+  download: (): Promise<OperationResult> => ipcRenderer.invoke('update:download'),
   install: (): Promise<void> => ipcRenderer.invoke('update:install'),
   getAppVersion: (): Promise<string> => ipcRenderer.invoke('update:getAppVersion'),
+  getSettings: (): Promise<UpdateSettings> => ipcRenderer.invoke('update:getSettings'),
+  setAutoUpdate: (enabled: boolean): Promise<OperationResult> =>
+    ipcRenderer.invoke('update:setAutoUpdate', enabled),
+  getStatus: (): Promise<UpdateStatusPayload> => ipcRenderer.invoke('update:getStatus'),
   onStatusChanged: (callback: (payload: UpdateStatusPayload) => void): (() => void) => {
     const listener = (_event: Electron.IpcRendererEvent, payload: UpdateStatusPayload): void => {
       callback(payload)

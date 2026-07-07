@@ -4,16 +4,12 @@ import WaveDivider from '@/components/WaveDivider'
 
 export default function SupportedGames(): React.JSX.Element {
   return (
-    <section id="games" className="relative px-4 py-20 sm:px-6 lg:py-28">
-      <div className="mx-auto max-w-6xl">
+    <section id="games" className="relative px-4 py-24 sm:px-6 lg:py-32">
+      <div className="mx-auto max-w-4xl">
         <ScrollReveal className="text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-accent">Harbor fleet</p>
-          <h2 className="mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl">
+          <h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
             Supported games
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-muted">
-            Text-only listings — no official logos. ModHarbor focuses on one harbor at a time.
-          </p>
         </ScrollReveal>
 
         <ScrollReveal delay={0.06} className="mt-12 grid gap-6 sm:grid-cols-2">
@@ -23,42 +19,24 @@ export default function SupportedGames(): React.JSX.Element {
               <article
                 key={game.id}
                 className={[
-                  'relative overflow-hidden rounded-2xl border bg-surface p-8 transition-shadow',
+                  'relative overflow-hidden rounded-2xl border bg-surface p-8 text-center',
                   supported
-                    ? 'border-accent/30 shadow-lg shadow-sky-100/80'
-                    : 'border-border/70 opacity-90'
+                    ? 'border-accent/30 shadow-lg shadow-sky-400/10'
+                    : 'border-border/70 opacity-80'
                 ].join(' ')}
               >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-widest text-muted">
-                      {game.id === 'gta5' ? 'Rockstar title' : 'Upcoming title'}
-                    </p>
-                    <h3 className="mt-2 font-display text-xl font-bold sm:text-2xl">{game.title}</h3>
-                  </div>
-                  <span
-                    className={[
-                      'rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider',
-                      supported
-                        ? 'border border-accent/30 bg-accent/10 text-accent'
-                        : 'border border-border bg-elevated text-muted'
-                    ].join(' ')}
-                  >
-                    {supported ? 'Supported Now' : 'Coming Soon'}
-                  </span>
-                </div>
-
-                <p className="mt-4 text-sm leading-relaxed text-muted">{game.description}</p>
-
-                {game.tagline ? (
-                  <p className="mt-4 text-xs font-medium text-text/80">{game.tagline}</p>
-                ) : null}
-
-                {!supported ? (
-                  <p className="mt-4 text-[10px] font-semibold uppercase tracking-wider text-muted">
-                    🔒 Not available in the launcher yet
-                  </p>
-                ) : null}
+                <span
+                  className={[
+                    'rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider',
+                    supported
+                      ? 'border border-accent/30 bg-accent/10 text-accent'
+                      : 'border border-border bg-elevated text-muted'
+                  ].join(' ')}
+                >
+                  {supported ? 'Supported Now' : 'Coming Soon'}
+                </span>
+                <h3 className="mt-4 font-display text-xl font-bold sm:text-2xl">{game.title}</h3>
+                <p className="mt-3 text-sm text-muted">{game.tagline}</p>
 
                 {supported ? (
                   <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-accent/5 blur-2xl" />

@@ -4,16 +4,17 @@
   --font-sans: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
   --font-display: 'Segoe UI', 'Inter', system-ui, sans-serif;
 
-  --color-launcher-bg: #f4f9fd;
-  --color-launcher-surface: #ffffff;
-  --color-launcher-elevated: #e8f4fc;
-  --color-launcher-border: #c5dff0;
-  --color-launcher-muted: #5a7a94;
-  --color-launcher-text: #0f2942;
-  --color-launcher-accent: #2b9fd4;
-  --color-launcher-accent-dim: #1a8fbf;
-  --color-launcher-glow: #2b9fd433;
-  --color-launcher-warning: #f59e0b;
+  /* Modrinth-style charcoal base with a sky-blue accent. */
+  --color-launcher-bg: #16181c;
+  --color-launcher-surface: #1e2126;
+  --color-launcher-elevated: #26292f;
+  --color-launcher-border: #363b43;
+  --color-launcher-muted: #9aa4b2;
+  --color-launcher-text: #edf0f4;
+  --color-launcher-accent: #38bdf8;
+  --color-launcher-accent-dim: #0ea5e9;
+  --color-launcher-glow: #38bdf833;
+  --color-launcher-warning: #fbbf24;
 }
 
 @layer base {
@@ -30,8 +31,8 @@
   body {
     @apply bg-launcher-bg text-launcher-text font-sans antialiased;
     background-image:
-      radial-gradient(ellipse 80% 50% at 50% -20%, #7dd3fc18, transparent),
-      radial-gradient(ellipse 60% 40% at 100% 100%, #e0f2fe88, transparent);
+      radial-gradient(ellipse 80% 50% at 50% -20%, #38bdf812, transparent),
+      radial-gradient(ellipse 60% 40% at 100% 100%, #0ea5e90d, transparent);
   }
 
   ::-webkit-scrollbar {
@@ -52,22 +53,23 @@
     background: var(--color-launcher-muted);
   }
 
-  html[data-theme='dark'] {
-    --color-launcher-bg: #0c1929;
-    --color-launcher-surface: #122338;
-    --color-launcher-elevated: #1a3048;
-    --color-launcher-border: #2a4a66;
-    --color-launcher-muted: #7ba3c0;
-    --color-launcher-text: #e8f4fc;
-    --color-launcher-accent: #38bdf8;
-    --color-launcher-accent-dim: #0ea5e9;
-    --color-launcher-glow: #38bdf833;
+  html[data-theme='light'] {
+    --color-launcher-bg: #f4f9fd;
+    --color-launcher-surface: #ffffff;
+    --color-launcher-elevated: #e8f4fc;
+    --color-launcher-border: #c5dff0;
+    --color-launcher-muted: #5a7a94;
+    --color-launcher-text: #0f2942;
+    --color-launcher-accent: #2b9fd4;
+    --color-launcher-accent-dim: #1a8fbf;
+    --color-launcher-glow: #2b9fd433;
+    --color-launcher-warning: #f59e0b;
   }
 
-  html[data-theme='dark'] body {
+  html[data-theme='light'] body {
     background-image:
-      radial-gradient(ellipse 80% 50% at 50% -20%, #0ea5e915, transparent),
-      radial-gradient(ellipse 60% 40% at 100% 100%, #12233866, transparent);
+      radial-gradient(ellipse 80% 50% at 50% -20%, #7dd3fc18, transparent),
+      radial-gradient(ellipse 60% 40% at 100% 100%, #e0f2fe88, transparent);
   }
 
   @keyframes splash-logo-in {

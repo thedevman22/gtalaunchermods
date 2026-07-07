@@ -130,7 +130,7 @@ export default function LoginPage(): React.JSX.Element {
             <button
               type="submit"
               disabled={submitting || loading}
-              className="w-full rounded-xl bg-gradient-to-r from-launcher-accent to-launcher-accent-dim py-3 text-sm font-bold uppercase tracking-wider text-white shadow-[0_4px_20px_var(--color-launcher-glow)] transition-transform hover:scale-[1.01] disabled:opacity-50"
+              className="w-full rounded-xl bg-gradient-to-r from-launcher-accent to-launcher-accent-dim py-3 text-sm font-bold uppercase tracking-wider text-launcher-bg shadow-[0_4px_20px_var(--color-launcher-glow)] transition-transform hover:scale-[1.01] disabled:opacity-50"
             >
               {submitting ? 'Please wait…' : mode === 'login' ? 'Sign In' : 'Create Account'}
             </button>

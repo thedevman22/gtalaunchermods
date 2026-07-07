@@ -86,6 +86,13 @@ export function completeOnboarding(): OperationResult {
   return { success: true }
 }
 
+/** Marks onboarding done without requiring a game path or dependencies ("Skip for now"). */
+export function skipOnboarding(): OperationResult {
+  setOnboardingComplete(true)
+  broadcastOnboardingChanged()
+  return { success: true }
+}
+
 export function resetOnboarding(): OperationResult {
   resetOnboardingState()
   broadcastOnboardingChanged()
@@ -105,5 +112,6 @@ export function registerOnboardingIpc(): void {
     return saveGameSetup(gameId as GameId, edition as GameEdition)
   })
   ipcMain.handle('onboarding:complete', () => completeOnboarding())
+  ipcMain.handle('onboarding:skip', () => skipOnboarding())
   ipcMain.handle('onboarding:reset', () => resetOnboarding())
 }

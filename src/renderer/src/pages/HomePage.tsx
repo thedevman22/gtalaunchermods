@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
+import GamePathDialog from '@renderer/components/GamePathDialog'
 import ModProfileCard from '@renderer/components/ModProfileCard'
 import ModDropZone from '@renderer/components/ModDropZone'
 import MotionButton from '@renderer/components/MotionButton'
@@ -10,6 +11,7 @@ import WaveDivider from '@renderer/components/WaveDivider'
 import { useAuth } from '@renderer/context/AuthContext'
 import { useLaunch } from '@renderer/context/LaunchContext'
 import { useProfiles } from '@renderer/context/ProfileContext'
+import { useSetupStatus } from '@renderer/hooks/useSetupStatus'
 import { staggerContainer } from '@renderer/lib/motion'
 import { GAME_CARDS } from '../../../shared/games'
 
@@ -24,10 +26,14 @@ export default function HomePage(): React.JSX.Element {
     refreshProfiles,
     selectedProfile
   } = useProfiles()
+  const setupStatus = useSetupStatus()
   const [newProfileName, setNewProfileName] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showCreate, setShowCreate] = useState(false)
+  const [showPathDialog, setShowPathDialog] = useState(false)
+
+  const gamePathMissing = setupStatus !== null && !setupStatus.gamePathConfigured
 
   useEffect(() => {
     if (profiles.length === 0) {
@@ -120,8 +126,27 @@ export default function HomePage(): React.JSX.Element {
         <WaveDivider variant="accent" />
       </header>
 
+      {gamePathMissing && (
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-launcher-accent/30 bg-launcher-accent/5 px-5 py-4">
+          <div>
+            <p className="text-sm font-semibold text-launcher-text">Finish setup</p>
+            <p className="mt-0.5 text-xs text-launcher-muted">
+              Locate your GTA V folder to start modding.
+            </p>
+          </div>
+          <MotionButton
+            onClick={() => setShowPathDialog(true)}
+            className="rounded-lg bg-launcher-accent px-4 py-2 text-xs font-bold uppercase tracking-wider text-launcher-bg"
+          >
+            Locate game folder
+          </MotionButton>
+        </div>
+      )}
+
+      <GamePathDialog open={showPathDialog} onClose={() => setShowPathDialog(false)} />
+
       {error && (
-        <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-600">
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
           {error}
         </div>
       )}
@@ -166,7 +191,7 @@ export default function HomePage(): React.JSX.Element {
             <MotionButton
               disabled={busy || !newProfileName.trim()}
               onClick={() => void handleCreateProfile()}
-              className="rounded-lg bg-launcher-accent px-4 py-2 text-xs font-bold uppercase tracking-wider text-white disabled:opacity-50"
+              className="rounded-lg bg-launcher-accent px-4 py-2 text-xs font-bold uppercase tracking-wider text-launcher-bg disabled:opacity-50"
             >
               Create
             </MotionButton>
@@ -192,6 +217,7 @@ export default function HomePage(): React.JSX.Element {
                 profile={profile}
                 isActive={profile.id === activeProfileId}
                 isLaunching={isLaunching && launchingProfileId === profile.id}
+                launchDisabled={gamePathMissing}
                 onLaunch={() => void startProfileLaunch(profile.id)}
                 onDelete={
                   profiles.length > 1 || limits?.canCreateProfile
@@ -216,6 +242,8 @@ export default function HomePage(): React.JSX.Element {
             autoInstall={false}
             onAutoInstallChange={() => undefined}
             isPremium={isPremium}
+            disabled={gamePathMissing}
+            disabledReason="Set your game folder first"
           />
           {!isPremium && selectedProfile.modCount >= (limits?.maxModsPerProfile ?? 3) && (
             <div className="mt-3">

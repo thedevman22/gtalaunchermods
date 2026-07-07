@@ -9,7 +9,7 @@ import type { ModImportResult, ModListResult } from '../shared/mods'
 import type { OAuthCallbackInfo } from '../shared/profile'
 import type { CatalogResult } from '../shared/catalog'
 import type { SetupStatus, DependencyId } from '../shared/dependencies'
-import type { UpdateStatusPayload } from '../shared/update'
+import type { UpdateSettings, UpdateStatusPayload } from '../shared/update'
 import type { ModProfileLimits, ModProfileManifest, ModProfileSummary } from '../shared/modProfiles'
 import type { GameEdition } from '../shared/games'
 
@@ -17,7 +17,7 @@ export type { LaunchStatus, GamePathSource } from '../shared/game'
 export type { ModSummary, ModListResult, ModImportResult } from '../shared/mods'
 export type { SubscriptionTier, UserProfile, ThemePreference, OAuthCallbackInfo } from '../shared/profile'
 export type { SetupStatus, DependencyId } from '../shared/dependencies'
-export type { UpdateStatus, UpdateStatusPayload } from '../shared/update'
+export type { UpdateStatus, UpdateStatusPayload, UpdateSettings } from '../shared/update'
 export type { GameEdition, GameId } from '../shared/games'
 export type { ModProfileSummary, ModProfileManifest, ModProfileLimits } from '../shared/modProfiles'
 export type { OnboardingState } from '../shared/onboarding'
@@ -66,8 +66,12 @@ export interface CatalogAPI {
 
 export interface UpdateAPI {
   check: () => Promise<OperationResult>
+  download: () => Promise<OperationResult>
   install: () => Promise<void>
   getAppVersion: () => Promise<string>
+  getSettings: () => Promise<UpdateSettings>
+  setAutoUpdate: (enabled: boolean) => Promise<OperationResult>
+  getStatus: () => Promise<UpdateStatusPayload>
   onStatusChanged: (callback: (payload: UpdateStatusPayload) => void) => () => void
 }
 
@@ -75,6 +79,7 @@ export interface OnboardingAPI {
   getState: () => Promise<OnboardingState>
   setGameSetup: (gameId: string, edition: GameEdition) => Promise<OperationResult>
   complete: () => Promise<OperationResult>
+  skip: () => Promise<OperationResult>
   reset: () => Promise<OperationResult>
   onChanged: (callback: (payload: OnboardingState) => void) => () => void
 }

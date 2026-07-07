@@ -5,16 +5,17 @@
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
   --font-display: var(--font-outfit), var(--font-geist-sans), system-ui, sans-serif;
 
-  --color-bg: #f8fcff;
-  --color-surface: #ffffff;
-  --color-elevated: #eef7fd;
-  --color-border: #c5dff0;
-  --color-muted: #5a7a94;
-  --color-text: #0f2942;
-  --color-accent: #2b9fd4;
-  --color-accent-dim: #1a8fbf;
-  --color-pro: #3b82f6;
-  --color-elite: #f59e0b;
+  /* Modrinth-style charcoal base with a sky-blue accent. */
+  --color-bg: #16181c;
+  --color-surface: #1e2126;
+  --color-elevated: #26292f;
+  --color-border: #363b43;
+  --color-muted: #9aa4b2;
+  --color-text: #edf0f4;
+  --color-accent: #38bdf8;
+  --color-accent-dim: #0ea5e9;
+  --color-pro: #60a5fa;
+  --color-elite: #fbbf24;
 }
 
 .font-display {
@@ -30,13 +31,13 @@ body {
   color: var(--color-text);
   font-family: var(--font-sans);
   background-image:
-    radial-gradient(ellipse 90% 55% at 50% -15%, rgba(125, 211, 252, 0.22), transparent),
-    radial-gradient(ellipse 70% 45% at 100% 0%, rgba(224, 242, 254, 0.95), transparent),
-    radial-gradient(ellipse 50% 40% at 0% 100%, rgba(238, 247, 253, 0.9), transparent);
+    radial-gradient(ellipse 90% 55% at 50% -15%, rgba(56, 189, 248, 0.08), transparent),
+    radial-gradient(ellipse 70% 45% at 100% 0%, rgba(14, 165, 233, 0.05), transparent),
+    radial-gradient(ellipse 50% 40% at 0% 100%, rgba(56, 189, 248, 0.04), transparent);
 }
 
 ::selection {
-  background: rgba(43, 159, 212, 0.25);
+  background: rgba(56, 189, 248, 0.35);
   color: var(--color-text);
 }
 
@@ -138,7 +139,7 @@ body {
   position: absolute;
   border-radius: 9999px;
   filter: blur(60px);
-  opacity: 0.35;
+  opacity: 0.22;
   will-change: transform;
 }
 

@@ -165,6 +165,21 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps):
     }
   }
 
+  const handleSkip = async (): Promise<void> => {
+    setBusy(true)
+    setError(null)
+    try {
+      const result = await window.api.onboarding.skip()
+      if (!result.success) {
+        setError(result.error ?? 'Could not skip setup.')
+        return
+      }
+      onComplete()
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const handleFinish = async (): Promise<void> => {
     setBusy(true)
     setError(null)
@@ -229,7 +244,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps):
       <div className="flex-1 overflow-y-auto p-8">
         <div className="mx-auto max-w-2xl">
           {error && (
-            <div className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-600">
+            <div className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
               {error}
             </div>
           )}
@@ -271,7 +286,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps):
                         className={[
                           'wave-card w-full rounded-xl border p-4 text-left transition-colors',
                           edition === option.id
-                            ? 'border-launcher-accent bg-launcher-accent/5 shadow-sm shadow-sky-100'
+                            ? 'border-launcher-accent bg-launcher-accent/10 shadow-[0_0_14px_var(--color-launcher-glow)]'
                             : 'border-launcher-border bg-launcher-surface hover:border-launcher-accent/40'
                         ].join(' ')}
                       >
@@ -381,7 +396,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps):
                     <MotionButton
                       disabled={depBusy !== null}
                       onClick={() => void handleInstallAll()}
-                      className="wave-button mt-4 rounded-xl bg-gradient-to-r from-launcher-accent to-launcher-accent-dim px-6 py-3 text-xs font-bold uppercase tracking-wider text-white disabled:opacity-50"
+                      className="wave-button mt-4 rounded-xl bg-gradient-to-r from-launcher-accent to-launcher-accent-dim px-6 py-3 text-xs font-bold uppercase tracking-wider text-launcher-bg disabled:opacity-50"
                     >
                       {depBusy === 'all' ? 'Installing…' : 'Install all'}
                     </MotionButton>
@@ -404,34 +419,46 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps):
           </MotionButton>
 
           {step < 3 ? (
-            <MotionButton
-              disabled={
-                busy ||
-                (step === 1 && !edition) ||
-                (step === 2 && !pathReady)
-              }
-              onClick={() => {
-                if (step === 1) {
-                  void handleSelectEdition(edition).then((ok) => {
-                    if (ok) setStep(2)
-                  })
-                  return
+            <div className="flex items-center gap-4">
+              {(step === 1 || step === 2) && (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void handleSkip()}
+                  className="text-xs font-semibold uppercase tracking-wider text-launcher-muted transition-colors hover:text-launcher-accent disabled:opacity-40"
+                >
+                  Skip for now
+                </button>
+              )}
+              <MotionButton
+                disabled={
+                  busy ||
+                  (step === 1 && !edition) ||
+                  (step === 2 && !pathReady)
                 }
-                if (step === 2) {
-                  void handleConfirmPath()
-                  return
-                }
-                setStep((s) => s + 1)
-              }}
-              className="wave-button rounded-xl bg-gradient-to-r from-launcher-accent to-launcher-accent-dim px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white disabled:opacity-50"
-            >
-              {step === 2 ? (busy ? 'Saving…' : 'Next') : 'Continue'}
-            </MotionButton>
+                onClick={() => {
+                  if (step === 1) {
+                    void handleSelectEdition(edition).then((ok) => {
+                      if (ok) setStep(2)
+                    })
+                    return
+                  }
+                  if (step === 2) {
+                    void handleConfirmPath()
+                    return
+                  }
+                  setStep((s) => s + 1)
+                }}
+                className="wave-button rounded-xl bg-gradient-to-r from-launcher-accent to-launcher-accent-dim px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-launcher-bg disabled:opacity-50"
+              >
+                {step === 2 ? (busy ? 'Saving…' : 'Next') : 'Continue'}
+              </MotionButton>
+            </div>
           ) : (
             <MotionButton
               disabled={busy || !depsReady}
               onClick={() => void handleFinish()}
-              className="wave-button rounded-xl bg-gradient-to-r from-launcher-accent to-launcher-accent-dim px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white disabled:opacity-50"
+              className="wave-button rounded-xl bg-gradient-to-r from-launcher-accent to-launcher-accent-dim px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-launcher-bg disabled:opacity-50"
             >
               {busy ? 'Finishing…' : 'Enter ModHarbor'}
             </MotionButton>
