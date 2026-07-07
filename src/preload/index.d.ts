@@ -7,7 +7,7 @@ import type {
 } from '../shared/game'
 import type { ModImportResult, ModListResult } from '../shared/mods'
 import type { OAuthCallbackInfo } from '../shared/profile'
-import type { CatalogResult } from '../shared/catalog'
+import type { CatalogMeta, CatalogResult } from '../shared/catalog'
 import type { SetupStatus, DependencyId } from '../shared/dependencies'
 import type { UpdateSettings, UpdateStatusPayload } from '../shared/update'
 import type { ModProfileLimits, ModProfileManifest, ModProfileSummary } from '../shared/modProfiles'
@@ -20,7 +20,7 @@ export type { SetupStatus, DependencyId } from '../shared/dependencies'
 export type { UpdateStatus, UpdateStatusPayload, UpdateSettings } from '../shared/update'
 export type { GameEdition, GameId } from '../shared/games'
 export type { ModProfileSummary, ModProfileManifest, ModProfileLimits } from '../shared/modProfiles'
-export type { OnboardingState } from '../shared/onboarding'
+export type { CatalogMeta, CatalogResult } from '../shared/catalog'
 
 export interface GameAPI {
   getPath: () => Promise<GamePathInfo>
@@ -59,6 +59,8 @@ export interface SetupAPI {
 
 export interface CatalogAPI {
   getMods: (gameId: string) => Promise<CatalogResult>
+  getMeta: () => Promise<CatalogMeta>
+  refresh: () => Promise<CatalogMeta>
   install: (catalogId: string, gameId: string) => Promise<ModImportResult>
   getInstalledMap: (gameId: string) => Promise<Record<string, string>>
   onChanged: (callback: () => void) => () => void

@@ -5,7 +5,7 @@ import icon from '../../resources/icon.png?asset'
 import { registerGameLauncherIpc } from './gameLauncher'
 import { registerModManagerIpc } from './modManager'
 import { registerAuthBridgeIpc } from './authBridge'
-import { registerCatalogIpc, registerCatalogWatcher } from './catalogManager'
+import { registerCatalogIpc, registerCatalogWatcher, initCatalog } from './catalogManager'
 import { registerDependencyManagerIpc } from './dependencyManager'
 import { registerUpdateIpc, startAutoUpdater } from './autoUpdater'
 import { registerOnboardingIpc } from './onboardingManager'
@@ -54,11 +54,12 @@ function createWindow(): BrowserWindow {
   return window
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   electronApp.setAppUserModelId('com.modharbor.app')
   registerGameLauncherIpc()
   registerModManagerIpc()
   registerCatalogIpc()
+  await initCatalog()
   registerCatalogWatcher()
   registerAuthBridgeIpc()
   registerDependencyManagerIpc()

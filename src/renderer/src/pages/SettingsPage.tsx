@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import AnimatedToggle from '@renderer/components/AnimatedToggle'
 import MotionButton from '@renderer/components/MotionButton'
+import SignInPrompt from '@renderer/components/SignInPrompt'
 import { useAuth } from '@renderer/context/AuthContext'
 import type { ThemePreference } from '../../../shared/profile'
 import type { UserPreferences } from '../../../shared/sync'
@@ -58,7 +59,7 @@ function GuideCard({
 }
 
 export default function SettingsPage({ onStartTour }: SettingsPageProps): React.JSX.Element {
-  const { user, profile, isOfflineDev, refreshProfile } = useAuth()
+  const { user, profile, isOfflineDev, isGuest, refreshProfile, openAuthModal } = useAuth()
   const [gamePath, setGamePath] = useState('')
   const [syncEnabled, setSyncEnabled] = useState(false)
   const [theme, setTheme] = useState<ThemePreference>('dark')
@@ -241,10 +242,20 @@ export default function SettingsPage({ onStartTour }: SettingsPageProps): React.
           </div>
           <AnimatedToggle
             enabled={syncEnabled}
-            disabled={busy || isOfflineDev}
+            disabled={busy || isOfflineDev || isGuest}
             onChange={(v) => void handleSyncToggle(v)}
           />
         </div>
+
+        {isGuest && !isOfflineDev && (
+          <div className="mt-4">
+            <SignInPrompt
+              message="Sign in to sync theme and install path across your devices."
+              onSignIn={openAuthModal}
+              compact
+            />
+          </div>
+        )}
 
         {isOfflineDev && (
           <p className="mt-4 text-xs text-amber-200/80">

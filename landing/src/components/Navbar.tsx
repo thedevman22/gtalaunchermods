@@ -1,11 +1,23 @@
+'use client'
+
 import Link from 'next/link'
+import { motion, useReducedMotion } from 'framer-motion'
 import { NAV_LINKS, SITE } from '@/lib/constants'
 import NavbarAuth from '@/components/NavbarAuth'
 import ModHarborLogo from '@/components/ModHarborLogo'
+import NavLink from '@/components/NavLink'
+import { transition } from '@/lib/motion'
 
 export default function Navbar(): React.JSX.Element {
+  const reduced = useReducedMotion()
+
   return (
-    <header className="sticky top-0 z-50 border-b border-border/60 bg-bg/75 backdrop-blur-xl">
+    <motion.header
+      initial={reduced ? false : { opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={transition(reduced ?? false, 0.28)}
+      className="sticky top-0 z-50 border-b border-border/60 bg-bg/75 backdrop-blur-xl"
+    >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
         <Link href="/" className="flex items-center" aria-label={SITE.name}>
           <ModHarborLogo
@@ -15,16 +27,16 @@ export default function Navbar(): React.JSX.Element {
           />
         </Link>
 
-        <nav className="hidden items-center gap-8 text-sm text-muted md:flex">
+        <nav className="hidden items-center gap-8 text-sm md:flex">
           {NAV_LINKS.map((link) => (
-            <Link key={link.href} href={link.href} className="transition-colors hover:text-text">
+            <NavLink key={link.href} href={link.href}>
               {link.label}
-            </Link>
+            </NavLink>
           ))}
         </nav>
 
         <NavbarAuth />
       </div>
-    </header>
+    </motion.header>
   )
 }

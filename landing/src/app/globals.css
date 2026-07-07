@@ -199,3 +199,113 @@ body {
     transform: translate(20px, -30px) scale(1.1);
   }
 }
+
+.shimmer-sweep {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  overflow: hidden;
+}
+
+.shimmer-sweep::after {
+  content: '';
+  position: absolute;
+  inset: -40% -60%;
+  background: linear-gradient(
+    105deg,
+    transparent 38%,
+    rgba(255, 255, 255, 0.07) 50%,
+    transparent 62%
+  );
+  animation: shimmer-sweep 4s ease-in-out infinite;
+}
+
+@keyframes shimmer-sweep {
+  0% {
+    transform: translateX(-80%) skewX(-12deg);
+  }
+  100% {
+    transform: translateX(80%) skewX(-12deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .wave-layer-a,
+  .wave-layer-b,
+  .wave-layer-c,
+  .wave-divider-svg .wave-layer-a,
+  .wave-divider-svg .wave-layer-b,
+  .wave-hero-layer .wave-layer-a,
+  .wave-hero-layer .wave-layer-b,
+  .wave-hero-layer .wave-layer-c,
+  .liquid-blob-a,
+  .liquid-blob-b,
+  .liquid-blob-c,
+  .wave-button::after,
+  .shimmer-sweep::after,
+  .pricing-gradient-border-glow,
+  .pricing-cta-shine {
+    animation: none !important;
+  }
+
+  .liquid-blob {
+    opacity: 0.12;
+  }
+}
+
+/* ── Pricing section ── */
+
+.pricing-gradient-border {
+  overflow: hidden;
+}
+
+.pricing-gradient-border-glow {
+  position: absolute;
+  inset: -120%;
+  background: conic-gradient(
+    from 0deg,
+    #38bdf8,
+    #22d3ee,
+    #0ea5e9,
+    #67e8f9,
+    #38bdf8
+  );
+  animation: pricing-border-spin 5s linear infinite;
+  opacity: 0.85;
+}
+
+@keyframes pricing-border-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.pricing-cta-shine {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    105deg,
+    transparent 42%,
+    rgba(255, 255, 255, 0.22) 50%,
+    transparent 58%
+  );
+  transform: translateX(-120%);
+}
+
+.pricing-cta:hover .pricing-cta-shine,
+.pricing-cta:focus-visible .pricing-cta-shine {
+  animation: pricing-cta-sweep 0.65s ease-out;
+}
+
+@keyframes pricing-cta-sweep {
+  to {
+    transform: translateX(120%);
+  }
+}

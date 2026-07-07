@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '@renderer/context/AuthContext'
 import { useUpgradeFlow } from '@renderer/context/UpgradeFlowContext'
+import SignInPrompt from '@renderer/components/SignInPrompt'
 import TierBadge from '@renderer/components/TierBadge'
 import { tierBadgeLabel } from '../../../shared/profile'
 
@@ -8,7 +9,7 @@ const SUBSCRIPTION_PORTAL_URL =
   import.meta.env.VITE_SUBSCRIPTION_PORTAL_URL ?? 'https://billing.stripe.com/p/login/test'
 
 export default function AccountPage(): React.JSX.Element {
-  const { user, profile, signOut, refreshProfile } = useAuth()
+  const { user, profile, signOut, refreshProfile, isGuest, openAuthModal } = useAuth()
   const { startUpgrade, awaitingPayment } = useUpgradeFlow()
   const [billingError, setBillingError] = useState<string | null>(null)
 
@@ -26,8 +27,67 @@ export default function AccountPage(): React.JSX.Element {
   }
 
   const handleUpgrade = (targetTier: 'pro' | 'elite'): void => {
+    if (isGuest) {
+      openAuthModal()
+      return
+    }
     setBillingError(null)
     startUpgrade(targetTier)
+  }
+
+  if (isGuest) {
+    return (
+      <div className="h-full overflow-y-auto px-10 py-10">
+        <div className="mx-auto w-full max-w-4xl space-y-8">
+          <header>
+            <h2 className="type-title">Account</h2>
+            <p className="type-body mt-1.5">Sign in to sync your profile and manage subscriptions.</p>
+          </header>
+
+          <SignInPrompt
+            message="Create a free account to sync mods across devices and unlock Pro or Elite perks."
+            onSignIn={openAuthModal}
+          />
+
+          <div className="grid gap-5 sm:grid-cols-3">
+            {[
+              {
+                tier: 'free' as const,
+                title: 'Free',
+                perks: ['Manual mod import', '1 profile · 3 mods', 'Offline story launch']
+              },
+              {
+                tier: 'pro' as const,
+                title: 'Pro',
+                perks: ['One-click auto-install', 'Unlimited profiles', 'Mod stacking', 'Priority support']
+              },
+              {
+                tier: 'elite' as const,
+                title: 'Elite',
+                perks: ['Everything in Pro', 'Early access features', 'Elite role badge']
+              }
+            ].map((plan) => (
+              <div
+                key={plan.tier}
+                className="rounded-2xl border border-launcher-border bg-launcher-elevated/40 p-6"
+              >
+                <div className="flex items-center justify-between">
+                  <h4 className="font-semibold text-launcher-text">{plan.title}</h4>
+                  <TierBadge tier={plan.tier} size="sm" />
+                </div>
+                <ul className="mt-3 space-y-1.5">
+                  {plan.perks.map((perk) => (
+                    <li key={perk} className="text-xs text-launcher-muted">
+                      • {perk}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (

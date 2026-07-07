@@ -25,7 +25,7 @@ interface UpgradeFlowContextValue {
 const UpgradeFlowContext = createContext<UpgradeFlowContextValue | null>(null)
 
 export function UpgradeFlowProvider({ children }: { children: ReactNode }): React.JSX.Element {
-  const { session, profile, refreshProfile, isOfflineDev } = useAuth()
+  const { session, profile, refreshProfile, isOfflineDev, openAuthModal } = useAuth()
   const [awaitingPayment, setAwaitingPayment] = useState(false)
   const [celebrationTier, setCelebrationTier] = useState<SubscriptionTier | null>(null)
   const watcherRef = useRef<ReturnType<typeof watchForTierUpgrade> | null>(null)
@@ -54,6 +54,7 @@ export function UpgradeFlowProvider({ children }: { children: ReactNode }): Reac
       }
 
       if (!session) {
+        openAuthModal()
         return
       }
 
@@ -79,7 +80,7 @@ export function UpgradeFlowProvider({ children }: { children: ReactNode }): Reac
         )
       }
     },
-    [handleTierDetected, isOfflineDev, profile?.subscription_tier, refreshProfile, session, stopWatcher]
+    [handleTierDetected, isOfflineDev, openAuthModal, profile?.subscription_tier, refreshProfile, session, stopWatcher]
   )
 
   const dismissCelebration = useCallback((): void => {

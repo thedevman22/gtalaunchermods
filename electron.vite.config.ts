@@ -5,6 +5,8 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   main: {
+    envDir: resolve('.'),
+    envPrefix: 'VITE_',
     plugins: [externalizeDepsPlugin()],
     build: {
       watch: {}

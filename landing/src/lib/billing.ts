@@ -2,7 +2,8 @@ const BILLING_API_URL = process.env.NEXT_PUBLIC_BILLING_API_URL ?? 'http://local
 
 export async function createCheckoutSession(
   accessToken: string,
-  tier: 'pro' | 'elite'
+  tier: 'pro' | 'elite',
+  interval: 'monthly' | 'yearly' = 'monthly'
 ): Promise<string> {
   const response = await fetch(`${BILLING_API_URL}/create-checkout-session`, {
     method: 'POST',
@@ -10,7 +11,7 @@ export async function createCheckoutSession(
       'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`
     },
-    body: JSON.stringify({ tier })
+    body: JSON.stringify({ tier, interval })
   })
 
   const payload = (await response.json()) as { url?: string; error?: string }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { House, Package, Settings, UserRound, type LucideIcon } from 'lucide-react'
 import type { NavItem } from '@renderer/types/navigation'
 import ModHarborLogo from '@renderer/components/ModHarborLogo'
+import { useAuth } from '@renderer/context/AuthContext'
 
 interface SidebarProps {
   active: NavItem
@@ -17,6 +18,8 @@ const navItems: { id: NavItem; label: string; icon: LucideIcon }[] = [
 
 export default function Sidebar({ active, onNavigate }: SidebarProps): React.JSX.Element {
   const [setupComplete, setSetupComplete] = useState(true)
+  const { isGuest, profile, user, openAuthModal } = useAuth()
+  const accountLabel = isGuest ? 'Guest' : (profile?.email ?? user?.email ?? 'Account')
 
   useEffect(() => {
     void window.api.setup.getStatus().then((status) => {
@@ -75,6 +78,32 @@ export default function Sidebar({ active, onNavigate }: SidebarProps): React.JSX
       </nav>
 
       <div className="border-t border-launcher-border p-5">
+        <div className="mb-4 flex items-center justify-between gap-2 rounded-xl border border-launcher-border bg-launcher-elevated/50 px-3 py-2.5">
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-launcher-muted">
+              Account
+            </p>
+            <p className="truncate text-xs text-launcher-text">{accountLabel}</p>
+          </div>
+          {isGuest ? (
+            <button
+              type="button"
+              onClick={openAuthModal}
+              className="shrink-0 text-xs font-semibold text-launcher-accent transition-colors hover:text-launcher-text"
+            >
+              Sign in
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onNavigate('account')}
+              className="shrink-0 text-xs font-medium text-launcher-muted transition-colors hover:text-launcher-text"
+            >
+              Manage
+            </button>
+          )}
+        </div>
+
         <div
           data-tour="setup-status"
           className="rounded-xl border border-launcher-border bg-launcher-elevated/50 p-4"

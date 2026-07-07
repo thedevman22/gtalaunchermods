@@ -10,7 +10,14 @@ import {
 import type { Session, User } from '@supabase/supabase-js'
 import type { SubscriptionTier, UserProfile } from '../../../shared/profile'
 import { hasTier, isPremiumTier } from '../../../shared/profile'
-import { fetchUserProfile, hasPlaceholderSupabaseConfig, isOfflineDevMode, isSupabaseConfigured, OFFLINE_DEV_PROFILE, supabase } from '@renderer/lib/supabase'
+import AuthModal from '@renderer/components/AuthModal'
+import {
+  fetchUserProfile,
+  isOfflineDevMode,
+  isSupabaseConfigured,
+  OFFLINE_DEV_PROFILE,
+  supabase
+} from '@renderer/lib/supabase'
 import { waitForTierUpgrade as pollForTierUpgrade } from '@renderer/lib/billing'
 
 interface AuthContextValue {
@@ -20,6 +27,13 @@ interface AuthContextValue {
   loading: boolean
   authError: string | null
   isOfflineDev: boolean
+  /** No active session — local guest mode (free tier limits). */
+  isGuest: boolean
+  isAuthenticated: boolean
+  authAvailable: boolean
+  authModalOpen: boolean
+  openAuthModal: () => void
+  closeAuthModal: () => void
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string) => Promise<void>
   signInWithGoogle: () => Promise<void>
@@ -42,6 +56,25 @@ export function AuthProvider({ children }: { children: ReactNode }): React.JSX.E
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [authError, setAuthError] = useState<string | null>(null)
+  const [authModalOpen, setAuthModalOpen] = useState(false)
+
+  const isGuest = !session && !isOfflineDevMode
+  const isAuthenticated = Boolean(session)
+  const authAvailable = isSupabaseConfigured && Boolean(supabase)
+
+  const openAuthModal = useCallback((): void => {
+    if (!authAvailable) {
+      setAuthError('Sign-in is not available right now. Please try again later.')
+      return
+    }
+    setAuthError(null)
+    setAuthModalOpen(true)
+  }, [authAvailable])
+
+  const closeAuthModal = useCallback((): void => {
+    setAuthModalOpen(false)
+    setAuthError(null)
+  }, [])
 
   const refreshProfile = useCallback(async (): Promise<UserProfile | null> => {
     if (isOfflineDevMode) {
@@ -67,8 +100,18 @@ export function AuthProvider({ children }: { children: ReactNode }): React.JSX.E
   useEffect(() => {
     if (isOfflineDevMode) {
       void window.api.app.setSubscriptionTier(OFFLINE_DEV_PROFILE.subscription_tier)
+      return
     }
-  }, [])
+    if (!session) {
+      void window.api.app.setSubscriptionTier('free')
+    }
+  }, [session])
+
+  useEffect(() => {
+    if (session) {
+      setAuthModalOpen(false)
+    }
+  }, [session])
 
   const waitForTierUpgrade = useCallback(
     async (targetTier: SubscriptionTier): Promise<boolean> => {
@@ -92,7 +135,6 @@ export function AuthProvider({ children }: { children: ReactNode }): React.JSX.E
 
     if (!supabase) {
       setLoading(false)
-      setAuthError('Supabase is not configured. Copy .env.example to .env and add your keys.')
       return
     }
 
@@ -155,7 +197,7 @@ export function AuthProvider({ children }: { children: ReactNode }): React.JSX.E
       setAuthError(offlineAuthMessage)
       throw new Error(offlineAuthMessage)
     }
-    if (!supabase) throw new Error('Supabase is not configured.')
+    if (!supabase) throw new Error('Sign-in is not available right now.')
     setAuthError(null)
 
     const { error } = await supabase.auth.signInWithPassword({ email, password })
@@ -170,13 +212,19 @@ export function AuthProvider({ children }: { children: ReactNode }): React.JSX.E
       setAuthError(offlineAuthMessage)
       throw new Error(offlineAuthMessage)
     }
-    if (!supabase) throw new Error('Supabase is not configured.')
+    if (!supabase) throw new Error('Sign-in is not available right now.')
     setAuthError(null)
 
     const { data, error } = await supabase.auth.signUp({ email, password })
     if (error) {
       setAuthError(error.message)
       throw error
+    }
+
+    if (data.session?.user) {
+      const userProfile = await loadProfileForUser(data.session.user)
+      setProfile(userProfile)
+      return
     }
 
     if (data.user && !data.session) {
@@ -189,7 +237,7 @@ export function AuthProvider({ children }: { children: ReactNode }): React.JSX.E
       setAuthError(offlineAuthMessage)
       throw new Error(offlineAuthMessage)
     }
-    if (!supabase) throw new Error('Supabase is not configured.')
+    if (!supabase) throw new Error('Sign-in is not available right now.')
     const client = supabase
     setAuthError(null)
 
@@ -258,6 +306,7 @@ export function AuthProvider({ children }: { children: ReactNode }): React.JSX.E
     setAuthError(null)
     await supabase.auth.signOut()
     setProfile(null)
+    void window.api.app.setSubscriptionTier('free')
   }, [])
 
   const clearAuthError = useCallback((): void => {
@@ -272,6 +321,12 @@ export function AuthProvider({ children }: { children: ReactNode }): React.JSX.E
       loading,
       authError,
       isOfflineDev: isOfflineDevMode,
+      isGuest,
+      isAuthenticated,
+      authAvailable,
+      authModalOpen,
+      openAuthModal,
+      closeAuthModal,
       signIn,
       signUp,
       signInWithGoogle,
@@ -287,6 +342,12 @@ export function AuthProvider({ children }: { children: ReactNode }): React.JSX.E
       profile,
       loading,
       authError,
+      isGuest,
+      isAuthenticated,
+      authAvailable,
+      authModalOpen,
+      openAuthModal,
+      closeAuthModal,
       signIn,
       signUp,
       signInWithGoogle,
@@ -297,46 +358,12 @@ export function AuthProvider({ children }: { children: ReactNode }): React.JSX.E
     ]
   )
 
-  if (!isSupabaseConfigured && !isOfflineDevMode && !loading) {
-    return (
-      <div className="flex h-full items-center justify-center bg-launcher-bg p-8">
-        <div className="max-w-lg rounded-xl border border-launcher-border bg-launcher-surface p-6 text-center">
-          <h1 className="text-lg font-bold text-launcher-text">
-            {import.meta.env.DEV ? 'Sign-in not available' : 'Connection error'}
-          </h1>
-          {import.meta.env.DEV ? (
-            <>
-              <p className="mt-2 text-sm text-launcher-muted">
-                {hasPlaceholderSupabaseConfig
-                  ? 'Supabase credentials in .env are still set to the .env.example placeholders.'
-                  : 'Supabase URL and anon key are missing from .env.'}
-              </p>
-              <ol className="mt-4 space-y-2 text-left text-xs text-launcher-muted">
-                <li>
-                  1. Copy <code className="text-launcher-accent">.env.example</code> to{' '}
-                  <code className="text-launcher-accent">.env</code> if you have not already
-                </li>
-                <li>
-                  2. Set <code className="text-launcher-accent">VITE_SUPABASE_URL</code> and{' '}
-                  <code className="text-launcher-accent">VITE_SUPABASE_ANON_KEY</code> from Supabase →
-                  Settings → API
-                </li>
-                <li>
-                  3. Restart with <code className="text-launcher-accent">npm run dev</code>
-                </li>
-              </ol>
-            </>
-          ) : (
-            <p className="mt-2 text-sm text-launcher-muted">
-              Please reinstall the latest version or contact support if the problem continues.
-            </p>
-          )}
-        </div>
-      </div>
-    )
-  }
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+      <AuthModal open={authModalOpen} onClose={closeAuthModal} />
+    </AuthContext.Provider>
+  )
 }
 
 export function useAuth(): AuthContextValue {

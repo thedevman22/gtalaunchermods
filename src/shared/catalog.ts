@@ -34,6 +34,13 @@ export interface CatalogResult {
   mods: CatalogMod[]
 }
 
+export type CatalogSource = 'remote' | 'cache' | 'bundled'
+
+export interface CatalogMeta {
+  refreshedAt: string | null
+  source: CatalogSource
+}
+
 export const MOD_CATEGORIES: { id: ModCategory | 'all'; label: string }[] = [
   { id: 'all', label: 'All Mods' },
   { id: 'vehicles', label: 'Vehicles' },

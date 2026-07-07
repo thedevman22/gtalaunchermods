@@ -1,6 +1,7 @@
 import { Lock } from 'lucide-react'
 import type { SubscriptionTier } from '../../../shared/profile'
 import { tierBadgeLabel } from '../../../shared/profile'
+import { useAuth } from '@renderer/context/AuthContext'
 import { useUpgradeFlow } from '@renderer/context/UpgradeFlowContext'
 
 interface UpgradePromptProps {
@@ -17,6 +18,7 @@ export default function UpgradePrompt({
   compact = false
 }: UpgradePromptProps): React.JSX.Element {
   const { startUpgrade } = useUpgradeFlow()
+  const { isGuest, openAuthModal } = useAuth()
   const handleUpgrade = onUpgrade ?? (() => startUpgrade(requiredTier === 'elite' ? 'elite' : 'pro'))
 
   return (
@@ -41,10 +43,10 @@ export default function UpgradePrompt({
       </div>
       <button
         type="button"
-        onClick={handleUpgrade}
+        onClick={isGuest ? openAuthModal : handleUpgrade}
         className="shrink-0 rounded-lg border border-amber-400/40 bg-amber-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-200 transition-colors hover:bg-amber-500/20"
       >
-        Upgrade
+        {isGuest ? 'Sign in' : 'Upgrade'}
       </button>
     </div>
   )

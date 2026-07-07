@@ -4,7 +4,12 @@ import ModHarborLogo from '@renderer/components/ModHarborLogo'
 
 type AuthMode = 'login' | 'signup'
 
-export default function LoginPage(): React.JSX.Element {
+interface LoginPageProps {
+  embedded?: boolean
+  onClose?: () => void
+}
+
+export default function LoginPage({ embedded = false, onClose }: LoginPageProps): React.JSX.Element {
   const { signIn, signUp, signInWithGoogle, authError, clearAuthError, loading } = useAuth()
   const [mode, setMode] = useState<AuthMode>('login')
   const [email, setEmail] = useState('')
@@ -47,22 +52,38 @@ export default function LoginPage(): React.JSX.Element {
   }
 
   return (
-    <div className="flex h-full items-center justify-center bg-launcher-bg p-6">
-      <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-5 flex justify-center">
-            <ModHarborLogo
-              variant="full"
-              size={44}
-              className="drop-shadow-[0_6px_24px_rgba(56,189,248,0.3)]"
-            />
+    <div
+      className={
+        embedded
+          ? 'w-full'
+          : 'flex h-full items-center justify-center bg-launcher-bg p-6'
+      }
+    >
+      <div className={embedded ? 'w-full' : 'w-full max-w-md'}>
+        {!embedded && (
+          <div className="mb-8 text-center">
+            <div className="mx-auto mb-5 flex justify-center">
+              <ModHarborLogo
+                variant="full"
+                size={44}
+                className="drop-shadow-[0_6px_24px_rgba(56,189,248,0.3)]"
+              />
+            </div>
+            <p className="mt-2 text-sm text-launcher-muted">
+              {mode === 'login' ? 'Sign in to sync and unlock perks' : 'Create your ModHarbor account'}
+            </p>
           </div>
-          <p className="mt-2 text-sm text-launcher-muted">
-            {mode === 'login' ? 'Sign in to manage your mods' : 'Create your launcher account'}
-          </p>
-        </div>
+        )}
 
         <div className="rounded-2xl border border-launcher-border bg-launcher-surface/80 p-6 backdrop-blur-xl">
+          {embedded && (
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <ModHarborLogo variant="mark" size={28} />
+              <p className="text-sm font-semibold text-launcher-text">
+                {mode === 'login' ? 'Sign in' : 'Create account'}
+              </p>
+            </div>
+          )}
           <div className="mb-6 flex rounded-lg bg-launcher-elevated p-1">
             {(['login', 'signup'] as const).map((tab) => (
               <button
@@ -154,6 +175,16 @@ export default function LoginPage(): React.JSX.Element {
             <span className="text-lg">G</span>
             Continue with Google
           </button>
+
+          {embedded && onClose ? (
+            <button
+              type="button"
+              onClick={onClose}
+              className="mt-4 w-full py-2 text-xs font-medium text-launcher-muted transition-colors hover:text-launcher-text"
+            >
+              Continue as guest
+            </button>
+          ) : null}
         </div>
       </div>
     </div>

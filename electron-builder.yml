@@ -83,5 +83,5 @@ npmRebuild: false
 publish:
   provider: github
   owner: thedevman22
-  repo: gtalaunchermods
+  repo: ModHarbor
   releaseType: release

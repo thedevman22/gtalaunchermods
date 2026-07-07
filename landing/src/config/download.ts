@@ -2,10 +2,10 @@
  * Release metadata for the Windows installer.
  * `version` is kept in sync with the root package.json by scripts/bump-version.mjs.
  */
-const VERSION = '1.0.13'
+const VERSION = '1.0.14'
 
 const GITHUB_OWNER = 'thedevman22'
-const GITHUB_REPO = 'gtalaunchermods'
+const GITHUB_REPO = 'ModHarbor'
 
 /** Matches electron-builder `artifactName` — stable across versions. */
 const INSTALLER_FILE = 'ModHarbor-Setup.exe'

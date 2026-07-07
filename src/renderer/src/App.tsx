@@ -9,7 +9,6 @@ import HomePage from '@renderer/pages/HomePage'
 import ModsPage from '@renderer/pages/ModsPage'
 import SettingsPage from '@renderer/pages/SettingsPage'
 import AccountPage from '@renderer/pages/AccountPage'
-import LoginPage from '@renderer/pages/LoginPage'
 import { AuthProvider, useAuth } from '@renderer/context/AuthContext'
 import { UpgradeFlowProvider } from '@renderer/context/UpgradeFlowContext'
 import { LaunchProvider } from '@renderer/context/LaunchContext'
@@ -29,7 +28,7 @@ function MainShell(): React.JSX.Element {
   const [tourOpen, setTourOpen] = useState(false)
   const tourTimer = useRef<number | null>(null)
 
-  const tourUserKey = user?.id ?? (isOfflineDev ? 'offline-dev' : 'anon')
+  const tourUserKey = user?.id ?? (isOfflineDev ? 'offline-dev' : 'guest')
 
   useEffect(() => {
     void window.api.setup.getStatus().then((status) => {
@@ -111,7 +110,7 @@ function MainShell(): React.JSX.Element {
 }
 
 function AppContent(): React.JSX.Element {
-  const { session, loading, isOfflineDev } = useAuth()
+  const { loading } = useAuth()
   const startup = useStartupSequence(!loading)
   const showMain = startup.phase === 'hidden'
   const [onboarding, setOnboarding] = useState<OnboardingState | null>(null)
@@ -130,14 +129,6 @@ function AppContent(): React.JSX.Element {
         statusText={startup.statusText}
         exiting={startup.phase === 'exiting'}
       />
-    )
-  }
-
-  if (!session && !isOfflineDev) {
-    return (
-      <div className="app-enter h-full">
-        <LoginPage />
-      </div>
     )
   }
 

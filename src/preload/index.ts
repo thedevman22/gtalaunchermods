@@ -6,7 +6,7 @@ import type {
   LaunchStatusPayload,
   OperationResult
 } from '../shared/game'
-import type { CatalogResult } from '../shared/catalog'
+import type { CatalogMeta, CatalogResult } from '../shared/catalog'
 import type { ModImportResult, ModListResult } from '../shared/mods'
 import type { OAuthCallbackInfo } from '../shared/profile'
 import type { SetupStatus } from '../shared/dependencies'
@@ -94,6 +94,8 @@ const setupApi = {
 
 const catalogApi = {
   getMods: (gameId: string): Promise<CatalogResult> => ipcRenderer.invoke('catalog:getMods', gameId),
+  getMeta: (): Promise<CatalogMeta> => ipcRenderer.invoke('catalog:getMeta'),
+  refresh: (): Promise<CatalogMeta> => ipcRenderer.invoke('catalog:refresh'),
   install: (catalogId: string, gameId: string): Promise<ModImportResult> =>
     ipcRenderer.invoke('catalog:install', catalogId, gameId),
   getInstalledMap: (gameId: string): Promise<Record<string, string>> =>

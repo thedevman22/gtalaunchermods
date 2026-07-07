@@ -1,6 +1,38 @@
-import Link from 'next/link'
+'use client'
+
+import { motion, useReducedMotion } from 'framer-motion'
 import { SITE } from '@/lib/constants'
 import ModHarborLogo from '@/components/ModHarborLogo'
+import NavLink from '@/components/NavLink'
+import { MOTION_DURATION_FAST, MOTION_EASE } from '@/lib/motion'
+
+function ExternalLink({
+  href,
+  children
+}: {
+  href: string
+  children: React.ReactNode
+}): React.JSX.Element {
+  const reduced = useReducedMotion()
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group relative py-1 text-muted transition-colors hover:text-text"
+    >
+      {children}
+      <motion.span
+        className="absolute -bottom-0.5 left-0 h-px w-full origin-left bg-accent"
+        initial={{ scaleX: 0 }}
+        whileHover={reduced ? undefined : { scaleX: 1 }}
+        transition={{ duration: MOTION_DURATION_FAST, ease: MOTION_EASE }}
+        aria-hidden
+      />
+    </a>
+  )
+}
 
 export default function Footer(): React.JSX.Element {
   return (
@@ -10,24 +42,11 @@ export default function Footer(): React.JSX.Element {
           <ModHarborLogo variant="full" size={20} />
         </div>
 
-        <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted">
-          <a
-            href={SITE.discordUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="transition-colors hover:text-text"
-          >
-            Discord
-          </a>
-          <Link href={SITE.termsUrl} className="transition-colors hover:text-text">
-            Terms
-          </Link>
-          <Link href={SITE.privacyUrl} className="transition-colors hover:text-text">
-            Privacy
-          </Link>
-          <Link href={SITE.legalUrl} className="transition-colors hover:text-text">
-            Safety &amp; Fair Play
-          </Link>
+        <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
+          <ExternalLink href={SITE.discordUrl}>Discord</ExternalLink>
+          <NavLink href={SITE.termsUrl}>Terms</NavLink>
+          <NavLink href={SITE.privacyUrl}>Privacy</NavLink>
+          <NavLink href={SITE.legalUrl}>Safety &amp; Fair Play</NavLink>
         </nav>
       </div>
 

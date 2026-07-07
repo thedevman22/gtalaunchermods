@@ -1,4 +1,5 @@
 import { DOWNLOAD_CONFIG } from '@/config/download'
+import type { PaidTierId } from '@/lib/pricing'
 
 export const SITE = {
   name: 'ModHarbor',
@@ -53,12 +54,27 @@ export const HOW_IT_WORKS_STEPS = [
   }
 ] as const
 
-export const PRICING_TIERS = [
+export const HERO_STATS = [
+  { value: 100, suffix: '%', prefix: '', label: 'Mods stay free' },
+  { value: 1, suffix: '', prefix: '', label: 'Click to install' },
+  { value: 3, suffix: '', prefix: '', label: 'Steps to play' }
+] as const
+
+export type PricingTierId = 'free' | PaidTierId
+
+export type PricingTier = {
+  id: PricingTierId
+  name: string
+  description: string
+  highlight: boolean
+  cta: string
+  features: readonly string[]
+}
+
+export const PRICING_TIERS: readonly PricingTier[] = [
   {
     id: 'free',
     name: 'Free',
-    price: '$0',
-    period: 'forever',
     description: 'Everything you need to mod story mode safely.',
     highlight: false,
     cta: 'Download Free',
@@ -72,8 +88,6 @@ export const PRICING_TIERS = [
   {
     id: 'pro',
     name: 'Pro',
-    price: '$7',
-    period: '/month',
     description: 'Power tools for serious modders.',
     highlight: true,
     cta: 'Get Pro',
@@ -87,8 +101,6 @@ export const PRICING_TIERS = [
   {
     id: 'elite',
     name: 'Elite',
-    price: '$15',
-    period: '/month',
     description: 'The ultimate launcher experience.',
     highlight: false,
     cta: 'Get Elite',
@@ -98,5 +110,32 @@ export const PRICING_TIERS = [
       'Elite gold badge',
       'Vote on roadmap features'
     ]
+  }
+] as const
+
+export const PRICING_FAQ = [
+  {
+    id: 'cancel',
+    question: 'Can I cancel anytime?',
+    answer:
+      'Yes. Cancel from your account settings or the Stripe customer portal. You keep paid features until the end of your billing period — no hidden fees.'
+  },
+  {
+    id: 'mods',
+    question: 'Do mods cost money?',
+    answer:
+      'Never. Every mod in the catalog stays free. Pro and Elite only unlock launcher convenience — one-click installs, profiles, and priority support.'
+  },
+  {
+    id: 'safe',
+    question: 'Is this safe for my Rockstar account?',
+    answer:
+      'ModHarbor launches GTA V in offline story mode only. We never touch online play, so your account stays out of modded multiplayer sessions.'
+  },
+  {
+    id: 'switch',
+    question: 'Can I switch between monthly and yearly?',
+    answer:
+      'You can change plans when you renew or upgrade. Yearly billing is billed once up front and typically saves about two months compared to paying monthly.'
   }
 ] as const

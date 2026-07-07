@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
+import { RefreshCw } from 'lucide-react'
 import CatalogModCard from '@renderer/components/CatalogModCard'
 import CatalogSidebar from '@renderer/components/CatalogSidebar'
 import InstalledModRow from '@renderer/components/InstalledModRow'
@@ -11,7 +12,7 @@ import { useModSync } from '@renderer/context/ModSyncContext'
 import { useProfiles } from '@renderer/context/ProfileContext'
 import { useAuth } from '@renderer/context/AuthContext'
 import { staggerContainer } from '@renderer/lib/motion'
-import type { CatalogMod, ModCategory } from '../../../shared/catalog'
+import type { CatalogMeta, CatalogMod, ModCategory } from '../../../shared/catalog'
 import { DEFAULT_GAME_ID, getGameDefinition } from '../../../shared/games'
 import type { ModSummary } from '../../../preload/index.d'
 import type { SetupStatus } from '../../../shared/dependencies'
@@ -48,6 +49,8 @@ export default function ModsPage({ onNavigateSettings }: ModsPageProps): React.J
   const [busyModId, setBusyModId] = useState<string | null>(null)
   const [importing, setImporting] = useState(false)
   const [syncBusy, setSyncBusy] = useState(false)
+  const [catalogMeta, setCatalogMeta] = useState<CatalogMeta | null>(null)
+  const [catalogRefreshing, setCatalogRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [profileModIds, setProfileModIds] = useState<Set<string>>(new Set())
 
@@ -61,15 +64,38 @@ export default function ModsPage({ onNavigateSettings }: ModsPageProps): React.J
   }, [])
 
   const loadCatalog = useCallback(async (): Promise<void> => {
-    const [catalog, map, library] = await Promise.all([
+    const [catalog, map, library, meta] = await Promise.all([
       window.api.catalog.getMods(activeGameId),
       window.api.catalog.getInstalledMap(activeGameId),
-      window.api.mods.list(activeGameId)
+      window.api.mods.list(activeGameId),
+      window.api.catalog.getMeta()
     ])
     setCatalogMods(catalog.mods)
     setInstalledMap(map)
     setInstalledMods(library.mods)
+    setCatalogMeta(meta)
   }, [activeGameId])
+
+  const handleRefreshCatalog = async (): Promise<void> => {
+    setCatalogRefreshing(true)
+    setError(null)
+    try {
+      const meta = await window.api.catalog.refresh()
+      setCatalogMeta(meta)
+      await loadCatalog()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to refresh catalog.')
+    } finally {
+      setCatalogRefreshing(false)
+    }
+  }
+
+  const catalogRefreshedLabel = useMemo(() => {
+    if (!catalogMeta?.refreshedAt) {
+      return catalogMeta?.source === 'bundled' ? 'Using bundled catalog' : 'Catalog not refreshed yet'
+    }
+    return `Catalog refreshed ${new Date(catalogMeta.refreshedAt).toLocaleString()}`
+  }, [catalogMeta])
 
   useEffect(() => {
     void loadSetup()
@@ -332,7 +358,8 @@ export default function ModsPage({ onNavigateSettings }: ModsPageProps): React.J
             </p>
           </div>
 
-          <div className="flex items-center gap-2 rounded-xl border border-launcher-border bg-launcher-elevated/60 p-1">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 rounded-xl border border-launcher-border bg-launcher-elevated/60 p-1">
             {(
               [
                 ['browse', 'Browse'],
@@ -358,6 +385,24 @@ export default function ModsPage({ onNavigateSettings }: ModsPageProps): React.J
                 ) : null}
               </button>
             ))}
+            </div>
+
+            {activeTab === 'browse' ? (
+              <div className="flex items-center gap-2">
+                <span className="hidden text-xs text-launcher-muted sm:inline">{catalogRefreshedLabel}</span>
+                <MotionButton
+                  disabled={catalogRefreshing}
+                  onClick={() => void handleRefreshCatalog()}
+                  className="btn-ghost flex items-center gap-2 px-3 py-2 text-xs"
+                >
+                  <RefreshCw
+                    className={['h-3.5 w-3.5', catalogRefreshing ? 'animate-spin' : ''].join(' ')}
+                    aria-hidden
+                  />
+                  {catalogRefreshing ? 'Refreshing…' : 'Refresh catalog'}
+                </MotionButton>
+              </div>
+            ) : null}
           </div>
         </div>
 

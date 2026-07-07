@@ -1,13 +1,13 @@
 {
   "name": "modharbor",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "description": "ModHarbor — manage and launch your game mods",
   "main": "./out/main/index.js",
   "author": "ModHarbor",
-  "homepage": "https://github.com/thedevman22/gtalaunchermods",
+  "homepage": "https://github.com/thedevman22/ModHarbor",
   "repository": {
     "type": "git",
-    "url": "https://github.com/thedevman22/gtalaunchermods.git"
+    "url": "https://github.com/thedevman22/ModHarbor.git"
   },
   "scripts": {
     "format": "prettier --write .",

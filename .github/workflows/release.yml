@@ -71,6 +71,7 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_MODHARBOR_WEBSITE_URL: ${{ secrets.VITE_MODHARBOR_WEBSITE_URL }}
           VITE_BILLING_API_URL: ${{ secrets.VITE_BILLING_API_URL }}
+          VITE_CATALOG_URL: ${{ secrets.VITE_CATALOG_URL }}
 
       - name: Remove duplicate GitHub releases for tag
         if: success() && steps.check.outputs.skip != 'true'

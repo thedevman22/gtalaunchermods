@@ -15,7 +15,7 @@ import { useSetupStatus } from '@renderer/hooks/useSetupStatus'
 import { staggerContainer } from '@renderer/lib/motion'
 
 export default function HomePage(): React.JSX.Element {
-  const { user, profile } = useAuth()
+  const { user, profile, isGuest } = useAuth()
   const { isLaunching, launchingProfileId, startProfileLaunch } = useLaunch()
   const {
     profiles,
@@ -35,7 +35,7 @@ export default function HomePage(): React.JSX.Element {
 
   const gamePathMissing = setupStatus !== null && !setupStatus.gamePathConfigured
   const email = profile?.email ?? user?.email ?? ''
-  const greetingName = email ? email.split('@')[0] : 'Captain'
+  const greetingName = isGuest ? 'Captain' : email ? email.split('@')[0] : 'Captain'
   const tier = profile?.subscription_tier ?? 'free'
 
   useEffect(() => {

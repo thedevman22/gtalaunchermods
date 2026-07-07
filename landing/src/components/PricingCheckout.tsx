@@ -1,14 +1,13 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { Check } from 'lucide-react'
+import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { createCheckoutSession } from '@/lib/billing'
-import { PRICING_TIERS, SITE } from '@/lib/constants'
+import type { BillingInterval } from '@/lib/pricing'
+import PricingSection from '@/components/pricing/PricingSection'
 import { getSupabaseClient } from '@/lib/supabase'
-import ScrollReveal from '@/components/ScrollReveal'
-import Link from 'next/link'
 
 function parseDesktopSessionFromHash(): {
   access_token: string
@@ -42,12 +41,13 @@ function parseDesktopSessionFromHash(): {
 async function startCheckout(
   accessToken: string,
   tier: 'pro' | 'elite',
+  interval: BillingInterval,
   onError: (message: string) => void,
   onBusy: (tier: 'pro' | 'elite' | null) => void
 ): Promise<void> {
   onBusy(tier)
   try {
-    const checkoutUrl = await createCheckoutSession(accessToken, tier)
+    const checkoutUrl = await createCheckoutSession(accessToken, tier, interval)
     window.location.href = checkoutUrl
   } catch (err) {
     onError(err instanceof Error ? err.message : 'Checkout failed.')
@@ -62,6 +62,8 @@ export default function PricingCheckout(): React.JSX.Element {
   const [checkoutBusy, setCheckoutBusy] = useState<'pro' | 'elite' | null>(null)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
   const checkoutSuccess = searchParams.get('checkout') === 'success'
+  const initialInterval: BillingInterval =
+    searchParams.get('billing') === 'yearly' ? 'yearly' : 'monthly'
 
   useEffect(() => {
     let cancelled = false
@@ -90,6 +92,7 @@ export default function PricingCheckout(): React.JSX.Element {
             await startCheckout(
               data.session.access_token,
               desktopSession.tier,
+              initialInterval,
               (message) => {
                 if (!cancelled) setCheckoutError(message)
               },
@@ -113,125 +116,59 @@ export default function PricingCheckout(): React.JSX.Element {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [initialInterval])
 
   const handleCheckout = useCallback(
-    async (tier: 'pro' | 'elite'): Promise<void> => {
+    async (tier: 'pro' | 'elite', interval: BillingInterval): Promise<void> => {
       if (!session?.access_token) {
         setCheckoutError('Sign in to continue to checkout.')
         return
       }
 
       setCheckoutError(null)
-      await startCheckout(session.access_token, tier, setCheckoutError, setCheckoutBusy)
+      await startCheckout(session.access_token, tier, interval, setCheckoutError, setCheckoutBusy)
     },
     [session]
   )
 
   return (
-    <section className="border-t border-border/60 px-4 py-20 sm:px-6 lg:py-28">
-      <div className="mx-auto max-w-6xl">
-        <ScrollReveal className="mx-auto max-w-2xl text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-accent">Pricing</p>
-          <h1 className="mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl">
-            Upgrade your ModHarbor experience
-          </h1>
-          <p className="mt-4 text-muted">
-            Pay for launcher convenience — mods stay free. Checkout is powered by Stripe; your desktop app
-            updates automatically when payment completes.
-          </p>
-        </ScrollReveal>
+    <PricingSection
+      variant="page"
+      showWave={false}
+      initialInterval={initialInterval}
+      checkoutBusy={checkoutBusy}
+      sessionReady={sessionReady}
+      hasSession={Boolean(session)}
+      onCheckout={handleCheckout}
+      alerts={
+        <>
+          {checkoutSuccess ? (
+            <div className="mx-auto mt-8 max-w-lg rounded-2xl border border-accent/40 bg-accent/10 px-6 py-4 text-center text-sm text-accent">
+              Payment successful. Return to ModHarbor — your tier will unlock shortly.
+            </div>
+          ) : null}
 
-        {checkoutSuccess ? (
-          <div className="mx-auto mt-8 max-w-lg rounded-2xl border border-accent/40 bg-accent/10 px-6 py-4 text-center text-sm text-accent">
-            Payment successful. Return to ModHarbor — your tier will unlock shortly.
-          </div>
-        ) : null}
+          {(authError || checkoutError) && (
+            <div className="mx-auto mt-8 max-w-lg rounded-2xl border border-red-500/30 bg-red-500/10 px-6 py-4 text-center text-sm text-red-300">
+              {checkoutError ?? authError}
+            </div>
+          )}
 
-        {(authError || checkoutError) && (
-          <div className="mx-auto mt-8 max-w-lg rounded-2xl border border-red-500/30 bg-red-500/10 px-6 py-4 text-center text-sm text-red-300">
-            {checkoutError ?? authError}
-          </div>
-        )}
-
-        {!session && sessionReady && !loading ? (
-          <div className="mx-auto mt-8 max-w-lg rounded-2xl border border-border bg-surface/50 px-6 py-5 text-center">
-            <p className="text-sm text-muted">Sign in with the same account you use in the desktop app.</p>
-            <Link
-              href="/sign-in?redirect=/pricing"
-              className="mt-4 inline-block rounded-xl bg-gradient-to-r from-accent to-accent-dim px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-bg"
-            >
-              Sign in to upgrade
-            </Link>
-          </div>
-        ) : null}
-
-        <ScrollReveal delay={0.06} className="mt-16 grid gap-6 lg:grid-cols-3">
-          {PRICING_TIERS.map((tier) => (
-            <article
-              key={tier.id}
-              className={[
-                'relative flex flex-col rounded-2xl border p-6 lg:p-8',
-                tier.highlight
-                  ? 'border-accent/50 bg-accent/5 shadow-[0_4px_30px_rgba(56,189,248,0.15)]'
-                  : 'border-border bg-surface/40'
-              ].join(' ')}
-            >
-              {tier.highlight ? (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-accent px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-bg">
-                  Most popular
-                </span>
-              ) : null}
-              <h2
-                className={[
-                  'font-display text-lg font-bold',
-                  tier.id === 'pro' && 'text-pro',
-                  tier.id === 'elite' && 'text-elite'
-                ].join(' ')}
+          {!session && sessionReady && !loading ? (
+            <div className="mx-auto mt-8 max-w-lg rounded-2xl border border-border bg-surface/50 px-6 py-5 text-center">
+              <p className="text-sm text-muted">
+                Sign in with the same account you use in the desktop app.
+              </p>
+              <Link
+                href="/sign-in?redirect=/pricing"
+                className="mt-4 inline-block rounded-xl bg-gradient-to-r from-accent to-accent-dim px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-bg"
               >
-                {tier.name}
-              </h2>
-              <div className="mt-3 flex items-baseline gap-1">
-                <span className="font-display text-4xl font-bold">{tier.price}</span>
-                <span className="text-sm text-muted">{tier.period}</span>
-              </div>
-              <p className="mt-3 text-sm text-muted">{tier.description}</p>
-
-              <ul className="mt-6 flex-1 space-y-3">
-                {tier.features.map((feature) => (
-                  <li key={feature} className="flex items-start gap-2 text-sm">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-accent" strokeWidth={2.5} aria-hidden />
-                    <span className="text-muted">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-
-              {tier.id === 'free' ? (
-                <a
-                  href={SITE.downloadUrl}
-                  className="mt-8 block rounded-xl border border-border bg-elevated py-3 text-center text-xs font-bold uppercase tracking-wider text-text transition-all hover:border-accent/40"
-                >
-                  {tier.cta}
-                </a>
-              ) : (
-                <button
-                  type="button"
-                  disabled={!session || checkoutBusy !== null}
-                  onClick={() => void handleCheckout(tier.id as 'pro' | 'elite')}
-                  className={[
-                    'mt-8 rounded-xl py-3 text-xs font-bold uppercase tracking-wider transition-all disabled:cursor-not-allowed disabled:opacity-50',
-                    tier.highlight
-                      ? 'wave-button bg-gradient-to-r from-accent to-accent-dim text-bg shadow-[0_4px_20px_rgba(56,189,248,0.3)] hover:scale-[1.02]'
-                      : 'border border-border bg-elevated text-text hover:border-accent/40'
-                  ].join(' ')}
-                >
-                  {checkoutBusy === tier.id ? 'Opening Stripe…' : tier.cta}
-                </button>
-              )}
-            </article>
-          ))}
-        </ScrollReveal>
-      </div>
-    </section>
+                Sign in to upgrade
+              </Link>
+            </div>
+          ) : null}
+        </>
+      }
+    />
   )
 }

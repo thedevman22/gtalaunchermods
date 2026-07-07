@@ -11,6 +11,8 @@ const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET
 const STRIPE_PRICE_PRO = process.env.STRIPE_PRICE_PRO
 const STRIPE_PRICE_ELITE = process.env.STRIPE_PRICE_ELITE
+const STRIPE_PRICE_PRO_YEARLY = process.env.STRIPE_PRICE_PRO_YEARLY
+const STRIPE_PRICE_ELITE_YEARLY = process.env.STRIPE_PRICE_ELITE_YEARLY
 const STRIPE_SUCCESS_URL =
   process.env.STRIPE_SUCCESS_URL ?? 'http://localhost:3000/pricing?checkout=success'
 const STRIPE_CANCEL_URL = process.env.STRIPE_CANCEL_URL ?? 'http://localhost:3000/pricing?checkout=cancel'
@@ -111,7 +113,20 @@ async function updateUserTier(userId: string, tier: SubscriptionTier): Promise<v
   }
 }
 
-function priceIdForTier(tier: 'pro' | 'elite'): string {
+function priceIdForTier(tier: 'pro' | 'elite', interval: 'monthly' | 'yearly' = 'monthly'): string {
+  if (interval === 'yearly') {
+    if (tier === 'elite') {
+      if (!STRIPE_PRICE_ELITE_YEARLY) {
+        throw new Error('Yearly Elite pricing is not configured on the server.')
+      }
+      return STRIPE_PRICE_ELITE_YEARLY
+    }
+    if (!STRIPE_PRICE_PRO_YEARLY) {
+      throw new Error('Yearly Pro pricing is not configured on the server.')
+    }
+    return STRIPE_PRICE_PRO_YEARLY
+  }
+
   if (tier === 'elite') return STRIPE_PRICE_ELITE!
   return STRIPE_PRICE_PRO!
 }
@@ -193,6 +208,8 @@ app.post('/create-checkout-session', async (req, res) => {
   try {
     const user = await authenticateUser(req)
     const tier = req.body?.tier as string | undefined
+    const intervalRaw = req.body?.interval as string | undefined
+    const interval: 'monthly' | 'yearly' = intervalRaw === 'yearly' ? 'yearly' : 'monthly'
 
     if (tier !== 'pro' && tier !== 'elite') {
       res.status(400).json({ error: 'tier must be "pro" or "elite".' })
@@ -202,7 +219,7 @@ app.post('/create-checkout-session', async (req, res) => {
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       customer_email: user.email || undefined,
-      line_items: [{ price: priceIdForTier(tier), quantity: 1 }],
+      line_items: [{ price: priceIdForTier(tier, interval), quantity: 1 }],
       success_url: STRIPE_SUCCESS_URL,
       cancel_url: STRIPE_CANCEL_URL,
       client_reference_id: user.id,
