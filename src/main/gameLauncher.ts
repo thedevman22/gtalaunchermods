@@ -1,8 +1,8 @@
 import { spawn, type ChildProcess } from 'child_process'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
 import { basename, dirname, join, normalize } from 'path'
-import Store from 'electron-store'
 import { BrowserWindow, dialog, ipcMain, type IpcMainInvokeEvent, type OpenDialogOptions } from 'electron'
+import { PersistentStore } from './persistentStore'
 import type {
   GamePathCandidate,
   GamePathInfo,
@@ -12,19 +12,23 @@ import type {
   OperationResult
 } from '../shared/game'
 
-interface LauncherStoreSchema {
+interface LauncherStoreSchema extends Record<string, unknown> {
   gta5ExePath: string
 }
 
 const COMMANDLINE_CONTENT = '-scOfflineOnly'
 const GTA_EXE_NAME = 'GTA5.exe'
 
-const store = new Store<LauncherStoreSchema>({
-  name: 'gta-mod-launcher',
-  defaults: {
-    gta5ExePath: ''
+let store: PersistentStore<LauncherStoreSchema> | null = null
+
+function getStore(): PersistentStore<LauncherStoreSchema> {
+  if (!store) {
+    store = new PersistentStore<LauncherStoreSchema>('gta-mod-launcher', {
+      gta5ExePath: ''
+    })
   }
-})
+  return store
+}
 
 let currentStatus: LaunchStatus = 'idle'
 let statusError: string | undefined
@@ -56,11 +60,11 @@ export function getLaunchStatus(): LaunchStatusPayload {
 }
 
 export function getSavedGamePath(): string {
-  return store.get('gta5ExePath', '')
+  return getStore().get('gta5ExePath', '') ?? ''
 }
 
 export function saveGamePath(exePath: string): void {
-  store.set('gta5ExePath', normalize(exePath))
+  getStore().set('gta5ExePath', normalize(exePath))
 }
 
 export function validateGamePath(exePath: string): {
