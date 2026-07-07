@@ -31,17 +31,14 @@ export default function Sidebar({ active, onNavigate }: SidebarProps): React.JSX
   return (
     <aside className="flex w-56 shrink-0 flex-col border-r border-launcher-border bg-launcher-surface/90 backdrop-blur-xl">
       <div className="border-b border-launcher-border px-6 py-7">
-        <div className="flex items-center gap-3">
-          <ModHarborLogo size={40} className="shrink-0 shadow-[0_4px_16px_rgba(43,159,212,0.25)]" />
-          <div>
-            <h1 className="font-display text-sm font-bold tracking-wide text-launcher-text">
-              ModHarbor
-            </h1>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-launcher-accent">
-              Mod launcher
-            </p>
-          </div>
-        </div>
+        <ModHarborLogo
+          variant="full"
+          size={26}
+          className="drop-shadow-[0_2px_10px_rgba(56,189,248,0.25)]"
+        />
+        <p className="mt-2.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-launcher-accent">
+          Mod launcher
+        </p>
       </div>
 
       <nav className="flex flex-1 flex-col gap-1.5 p-4">

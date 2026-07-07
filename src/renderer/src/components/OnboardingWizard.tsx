@@ -215,7 +215,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps):
         <WaveBackground />
         <div className="relative z-10 flex items-center justify-between px-8 py-5">
           <div className="flex items-center gap-3">
-            <ModHarborLogo size={40} className="shadow-[0_4px_16px_rgba(43,159,212,0.25)]" />
+            <ModHarborLogo size={40} className="drop-shadow-[0_2px_10px_rgba(56,189,248,0.3)]" />
             <div>
               <h1 className="font-display text-lg font-bold text-launcher-text">Welcome to ModHarbor</h1>
               <p className="text-xs text-launcher-muted">First-run setup · Step {step + 1} of {STEPS.length}</p>
@@ -254,8 +254,12 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps):
             <motion.div key={step} {...pageTransition}>
               {step === 0 && (
                 <div className="text-center">
-                  <div className="mx-auto mb-6 w-fit shadow-[0_8px_40px_rgba(43,159,212,0.25)]">
-                    <ModHarborLogo size={96} className="rounded-2xl" />
+                  <div className="mx-auto mb-8 w-fit">
+                    <ModHarborLogo
+                      variant="full"
+                      size={56}
+                      className="drop-shadow-[0_8px_32px_rgba(56,189,248,0.3)]"
+                    />
                   </div>
                   <h2 className="font-display text-2xl font-bold text-launcher-text">
                     Dock your mods in calm waters

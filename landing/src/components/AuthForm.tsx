@@ -73,8 +73,12 @@ export default function AuthForm({ mode }: AuthFormProps): React.JSX.Element {
     return (
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 shadow-[0_8px_24px_rgba(56,189,248,0.25)]">
-            <ModHarborLogo size={56} className="rounded-xl" />
+          <div className="mx-auto mb-5 flex justify-center">
+            <ModHarborLogo
+              variant="full"
+              size={40}
+              className="drop-shadow-[0_6px_20px_rgba(56,189,248,0.3)]"
+            />
           </div>
           <h1 className="text-2xl font-bold">You&apos;re signed in</h1>
           <p className="mt-2 text-sm text-muted">
@@ -108,10 +112,13 @@ export default function AuthForm({ mode }: AuthFormProps): React.JSX.Element {
   return (
     <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 shadow-[0_8px_24px_rgba(56,189,248,0.25)]">
-            <ModHarborLogo size={56} className="rounded-xl" />
+          <div className="mx-auto mb-5 flex justify-center">
+            <ModHarborLogo
+              variant="full"
+              size={40}
+              className="drop-shadow-[0_6px_20px_rgba(56,189,248,0.3)]"
+            />
           </div>
-          <h1 className="text-2xl font-bold">{SITE.name}</h1>
         <p className="mt-2 text-sm text-muted">
           {isLogin ? 'Sign in to your launcher account' : 'Create your launcher account'}
         </p>

@@ -1,5 +1,6 @@
 import DownloadCta from '@/components/DownloadCta'
 import HeroBackground from '@/components/HeroBackground'
+import ModHarborLogo from '@/components/ModHarborLogo'
 import ScrollReveal from '@/components/ScrollReveal'
 import WaveDivider from '@/components/WaveDivider'
 
@@ -10,6 +11,13 @@ export default function Hero(): React.JSX.Element {
 
       <div className="relative mx-auto max-w-6xl">
         <ScrollReveal className="mx-auto max-w-2xl text-center">
+          <div className="mb-8 flex justify-center">
+            <ModHarborLogo
+              variant="full"
+              size={44}
+              className="drop-shadow-[0_8px_28px_rgba(56,189,248,0.35)]"
+            />
+          </div>
           <h1 className="font-display text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
             One-click mods for{' '}
             <span className="bg-gradient-to-r from-accent via-sky-400 to-cyan-300 bg-clip-text text-transparent">

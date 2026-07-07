@@ -42,19 +42,15 @@ export default function SplashScreen({
       </div>
 
       <div className="relative flex flex-col items-center px-8">
-        <div
-          className={[
-            'splash-logo-enter shadow-[0_8px_40px_rgba(43,159,212,0.3)]',
-            exiting ? 'scale-100 opacity-100' : ''
-          ].join(' ')}
-        >
-          <ModHarborLogo size={112} className="rounded-3xl" />
+        <div className={['splash-logo-enter', exiting ? 'scale-100 opacity-100' : ''].join(' ')}>
+          <ModHarborLogo
+            variant="full"
+            size={64}
+            className="drop-shadow-[0_8px_32px_rgba(56,189,248,0.35)]"
+          />
         </div>
 
-        <h1 className="splash-title-enter mt-8 font-display text-3xl font-bold tracking-wide text-launcher-text">
-          ModHarbor
-        </h1>
-        <p className="splash-title-enter mt-2 text-xs font-semibold uppercase tracking-[0.35em] text-launcher-accent">
+        <p className="splash-title-enter mt-6 text-xs font-semibold uppercase tracking-[0.35em] text-launcher-accent">
           Story mode · Offline · Safe
         </p>
 

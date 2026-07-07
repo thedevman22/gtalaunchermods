@@ -50,10 +50,13 @@ export default function LoginPage(): React.JSX.Element {
     <div className="flex h-full items-center justify-center bg-launcher-bg p-6">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 shadow-[0_8px_30px_rgba(43,159,212,0.25)]">
-            <ModHarborLogo size={56} className="rounded-xl" />
+          <div className="mx-auto mb-5 flex justify-center">
+            <ModHarborLogo
+              variant="full"
+              size={44}
+              className="drop-shadow-[0_6px_24px_rgba(56,189,248,0.3)]"
+            />
           </div>
-          <h1 className="font-display text-2xl font-bold text-launcher-text">ModHarbor</h1>
           <p className="mt-2 text-sm text-launcher-muted">
             {mode === 'login' ? 'Sign in to manage your mods' : 'Create your launcher account'}
           </p>

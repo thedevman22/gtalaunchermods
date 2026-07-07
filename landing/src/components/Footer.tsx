@@ -6,9 +6,8 @@ export default function Footer(): React.JSX.Element {
   return (
     <footer className="border-t border-border/60 bg-surface/30 px-4 py-10 sm:px-6">
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 sm:flex-row sm:justify-between">
-        <div className="flex items-center gap-2.5">
-          <ModHarborLogo size={28} />
-          <span className="font-display text-sm font-bold">{SITE.name}</span>
+        <div className="flex items-center">
+          <ModHarborLogo variant="full" size={20} />
         </div>
 
         <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted">
