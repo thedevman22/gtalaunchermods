@@ -1,5 +1,7 @@
+import { Search } from 'lucide-react'
 import type { ModCategory } from '../../../shared/catalog'
 import { MOD_CATEGORIES } from '../../../shared/catalog'
+import { getCategoryMeta } from '@renderer/lib/categoryMeta'
 
 interface CatalogSidebarProps {
   activeCategory: ModCategory | 'all'
@@ -23,20 +25,11 @@ export default function CatalogSidebar({
           Search mods
         </label>
         <div className="relative">
-          <svg
+          <Search
             className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-launcher-muted"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+            strokeWidth={2}
             aria-hidden
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
+          />
           <input
             id="mod-search"
             type="search"
@@ -55,6 +48,8 @@ export default function CatalogSidebar({
         <ul className="space-y-1">
           {MOD_CATEGORIES.map((category) => {
             const isActive = activeCategory === category.id
+            const meta = getCategoryMeta(category.id)
+            const Icon = meta.icon
             return (
               <li key={category.id}>
                 <button
@@ -63,19 +58,18 @@ export default function CatalogSidebar({
                   className={[
                     'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-all duration-200',
                     isActive
-                      ? 'bg-launcher-accent/12 text-launcher-accent shadow-[inset_3px_0_0_0_var(--color-launcher-accent)]'
+                      ? 'bg-launcher-accent/12 text-launcher-text shadow-[inset_3px_0_0_0_var(--color-launcher-accent)]'
                       : 'text-launcher-muted hover:bg-launcher-elevated/80 hover:text-launcher-text'
                   ].join(' ')}
                 >
                   <span
                     className={[
-                      'flex h-8 w-8 items-center justify-center rounded-lg text-sm',
-                      isActive
-                        ? 'bg-launcher-accent/15 text-launcher-accent'
-                        : 'bg-launcher-elevated text-launcher-muted'
+                      'flex h-8 w-8 items-center justify-center rounded-lg',
+                      isActive ? meta.bg : 'bg-launcher-elevated',
+                      isActive ? meta.text : 'text-launcher-muted'
                     ].join(' ')}
                   >
-                    {category.icon}
+                    <Icon className="h-4 w-4" strokeWidth={2} aria-hidden />
                   </span>
                   <span className="truncate">{category.label}</span>
                 </button>

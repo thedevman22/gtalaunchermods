@@ -1,10 +1,17 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import { Package, Rocket, ShieldCheck, type LucideIcon } from 'lucide-react'
 import { HOW_IT_WORKS_STEPS } from '@/lib/constants'
 import ScrollReveal from '@/components/ScrollReveal'
 import WaveDivider from '@/components/WaveDivider'
 import { staggerContainer, staggerItem } from '@/lib/motion'
+
+const STEP_ICONS: Record<(typeof HOW_IT_WORKS_STEPS)[number]['id'], LucideIcon> = {
+  build: Package,
+  launch: Rocket,
+  safe: ShieldCheck
+}
 
 export default function HowItWorks(): React.JSX.Element {
   return (
@@ -23,10 +30,12 @@ export default function HowItWorks(): React.JSX.Element {
           viewport={{ once: true, margin: '-80px' }}
           className="mt-14 grid gap-10 sm:grid-cols-3"
         >
-          {HOW_IT_WORKS_STEPS.map((step, index) => (
+          {HOW_IT_WORKS_STEPS.map((step, index) => {
+            const Icon = STEP_ICONS[step.id]
+            return (
             <motion.li key={step.title} variants={staggerItem} className="text-center">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-accent/25 bg-accent/10 text-3xl shadow-[0_4px_24px_rgba(56,189,248,0.12)]">
-                <span aria-hidden>{step.icon}</span>
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-accent/25 bg-accent/10 text-accent shadow-[0_4px_24px_rgba(56,189,248,0.12)]">
+                <Icon className="h-7 w-7" strokeWidth={1.75} aria-hidden />
               </div>
               <h3 className="mt-5 font-display text-lg font-bold">
                 <span className="mr-2 text-accent">{index + 1}.</span>
@@ -34,7 +43,8 @@ export default function HowItWorks(): React.JSX.Element {
               </h3>
               <p className="mt-2 text-sm text-muted">{step.line}</p>
             </motion.li>
-          ))}
+            )
+          })}
         </motion.ol>
       </div>
       <WaveDivider variant="accent" className="absolute bottom-0 left-0 right-0" />

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Check } from 'lucide-react'
 import type { DependencyId, SetupStatus } from '../../../shared/dependencies'
 
 interface SetupChecklistProps {
@@ -232,7 +233,7 @@ function StepIcon({ done, step }: { done: boolean; step: number }): React.JSX.El
           : 'border border-launcher-border bg-launcher-elevated text-launcher-muted'
       ].join(' ')}
     >
-      {done ? '✓' : step}
+      {done ? <Check className="h-4 w-4" strokeWidth={2.5} aria-hidden /> : step}
     </div>
   )
 }

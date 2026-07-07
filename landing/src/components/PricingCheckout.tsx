@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { Check } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { createCheckoutSession } from '@/lib/billing'
@@ -199,7 +200,7 @@ export default function PricingCheckout(): React.JSX.Element {
               <ul className="mt-6 flex-1 space-y-3">
                 {tier.features.map((feature) => (
                   <li key={feature} className="flex items-start gap-2 text-sm">
-                    <span className="mt-0.5 text-accent">✓</span>
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-accent" strokeWidth={2.5} aria-hidden />
                     <span className="text-muted">{feature}</span>
                   </li>
                 ))}

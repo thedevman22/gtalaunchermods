@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import PageShell from '@/components/PageShell'
 import { SITE } from '@/lib/constants'
 
 export const metadata = {
@@ -8,17 +8,8 @@ export const metadata = {
 
 export default function PrivacyPage(): React.JSX.Element {
   return (
-    <div className="min-h-screen">
-      <header className="border-b border-border/60 bg-bg/80 px-4 py-6 sm:px-6">
-        <div className="mx-auto flex max-w-3xl items-center justify-between">
-          <Link href="/" className="text-sm font-bold text-accent hover:underline">
-            ← Back to {SITE.name}
-          </Link>
-        </div>
-      </header>
-
-      <article className="mx-auto max-w-3xl space-y-6 px-4 py-12 text-muted sm:px-6">
-        <h1 className="text-3xl font-bold text-text">Privacy Policy</h1>
+    <PageShell eyebrow="Legal" title="Privacy Policy">
+      <article className="mx-auto max-w-3xl space-y-8 text-muted">
         <p>
           Last updated:{' '}
           {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
@@ -73,6 +64,6 @@ export default function PrivacyPage(): React.JSX.Element {
           </p>
         </section>
       </article>
-    </div>
+    </PageShell>
   )
 }

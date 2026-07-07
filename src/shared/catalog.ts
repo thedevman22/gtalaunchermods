@@ -34,15 +34,19 @@ export interface CatalogResult {
   mods: CatalogMod[]
 }
 
-export const MOD_CATEGORIES: { id: ModCategory | 'all'; label: string; icon: string }[] = [
-  { id: 'all', label: 'All Mods', icon: '◈' },
-  { id: 'vehicles', label: 'Vehicles', icon: '🚗' },
-  { id: 'weapons', label: 'Weapons', icon: '⚔' },
-  { id: 'characters', label: 'Characters', icon: '👤' },
-  { id: 'maps', label: 'Maps', icon: '🗺' },
-  { id: 'scripts_trainers', label: 'Scripts / Trainers', icon: '⌨' },
-  { id: 'visual_graphics', label: 'Visual / Graphics', icon: '✦' }
+export const MOD_CATEGORIES: { id: ModCategory | 'all'; label: string }[] = [
+  { id: 'all', label: 'All Mods' },
+  { id: 'vehicles', label: 'Vehicles' },
+  { id: 'weapons', label: 'Weapons' },
+  { id: 'characters', label: 'Characters' },
+  { id: 'maps', label: 'Maps' },
+  { id: 'scripts_trainers', label: 'Scripts / Trainers' },
+  { id: 'visual_graphics', label: 'Visual / Graphics' }
 ]
+
+export function getCategoryLabel(category: ModCategory): string {
+  return MOD_CATEGORIES.find((entry) => entry.id === category)?.label ?? category
+}
 
 export function formatDownloadCount(count: number): string {
   if (count >= 1_000_000) {

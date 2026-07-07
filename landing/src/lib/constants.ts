@@ -7,9 +7,18 @@ export const SITE = {
     'ModHarbor is a free desktop launcher to manage game mods safely. Story-mode offline play only — no online, no paywalls on mods.',
   downloadUrl: DOWNLOAD_CONFIG.downloadUrl,
   discordUrl: process.env.NEXT_PUBLIC_DISCORD_URL ?? 'https://discord.gg/modharbor',
+  takedownEmail: process.env.NEXT_PUBLIC_TAKEDOWN_EMAIL ?? 'takedown@modharbor.app',
   termsUrl: '/terms',
-  privacyUrl: '/privacy'
+  privacyUrl: '/privacy',
+  legalUrl: '/legal'
 } as const
+
+export const NAV_LINKS = [
+  { href: '/how-it-works', label: 'How It Works' },
+  { href: '/why-modharbor', label: 'Why ModHarbor' },
+  { href: '/gta-support', label: 'GTA Support' },
+  { href: '/#pricing', label: 'Pricing' }
+] as const
 
 export const SUPPORTED_GAMES = [
   {
@@ -28,17 +37,17 @@ export const SUPPORTED_GAMES = [
 
 export const HOW_IT_WORKS_STEPS = [
   {
-    icon: '📦',
+    id: 'build' as const,
     title: 'Build a profile',
     line: 'Group your mods into named loadouts.'
   },
   {
-    icon: '🚀',
+    id: 'launch' as const,
     title: 'Launch it',
     line: 'One click deploys the profile and starts the game.'
   },
   {
-    icon: '🛡️',
+    id: 'safe' as const,
     title: 'Stay safe',
     line: 'Story mode only — always launched offline.'
   }

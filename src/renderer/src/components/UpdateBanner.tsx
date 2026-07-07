@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { X } from 'lucide-react'
 import MotionButton from '@renderer/components/MotionButton'
 import type { UpdateStatusPayload } from '../../../shared/update'
 
@@ -66,9 +67,9 @@ export default function UpdateBanner(): React.JSX.Element | null {
               type="button"
               onClick={() => setToastDismissed(true)}
               aria-label="Dismiss update notification"
-              className="shrink-0 rounded-md px-1.5 text-launcher-muted hover:text-launcher-text"
+              className="shrink-0 rounded-md p-1 text-launcher-muted hover:text-launcher-text"
             >
-              ✕
+              <X className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
             </button>
           </div>
           <MotionButton

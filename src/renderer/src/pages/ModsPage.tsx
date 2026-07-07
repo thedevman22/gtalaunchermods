@@ -4,6 +4,7 @@ import CatalogModCard from '@renderer/components/CatalogModCard'
 import CatalogSidebar from '@renderer/components/CatalogSidebar'
 import InstalledModRow from '@renderer/components/InstalledModRow'
 import MissingModsDialog from '@renderer/components/MissingModsDialog'
+import ModDropZone from '@renderer/components/ModDropZone'
 import MotionButton from '@renderer/components/MotionButton'
 import SetupChecklist from '@renderer/components/SetupChecklist'
 import { useModSync } from '@renderer/context/ModSyncContext'
@@ -239,6 +240,30 @@ export default function ModsPage({ onNavigateSettings }: ModsPageProps): React.J
         }
       }
       await loadCatalog()
+      await refreshProfiles()
+      if (selectedProfileId) {
+        await loadProfileMods(selectedProfileId)
+      }
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  const handleImportZip = async (zipPath: string): Promise<void> => {
+    setImporting(true)
+    setError(null)
+    try {
+      const result = selectedProfileId
+        ? await window.api.profiles.importZip(selectedProfileId, zipPath)
+        : await window.api.mods.importMod(zipPath)
+      if (!result.success && result.error) {
+        setError(result.error)
+      }
+      await loadCatalog()
+      await refreshProfiles()
+      if (selectedProfileId) {
+        await loadProfileMods(selectedProfileId)
+      }
     } finally {
       setImporting(false)
     }
@@ -257,15 +282,17 @@ export default function ModsPage({ onNavigateSettings }: ModsPageProps): React.J
   // only install/enable actions are locked.
   if (setupStatus.gamePathConfigured && !setupStatus.modsAllowed) {
     return (
-      <SetupChecklist
-        onComplete={() => void loadSetup()}
-        onNavigateSettings={onNavigateSettings}
-      />
+      <div className="h-full overflow-y-auto px-10 py-10">
+        <SetupChecklist
+          onComplete={() => void loadSetup()}
+          onNavigateSettings={onNavigateSettings}
+        />
+      </div>
     )
   }
 
   return (
-    <div className="-m-6 flex h-[calc(100%+3rem)] min-h-0 flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       <MissingModsDialog
         mods={missingMods}
         busy={syncBusy || reconciling}
@@ -289,20 +316,19 @@ export default function ModsPage({ onNavigateSettings }: ModsPageProps): React.J
         }}
         onDismiss={dismissMissingMods}
       />
-      <header className="shrink-0 border-b border-launcher-border/60 bg-launcher-bg/80 px-6 py-4 backdrop-blur-sm">
+      <header className="shrink-0 border-b border-launcher-border/60 bg-launcher-bg/80 px-8 py-6 backdrop-blur-sm">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="font-display text-2xl font-bold text-launcher-text">
-              {game?.catalogTitle ?? 'Mod Catalog'}
-            </h2>
-            <p className="mt-1 text-sm text-launcher-muted">
-              {game?.catalogSubtitle ?? 'Browse mods or manage your installed library.'}
+            <h2 className="type-title">{game?.catalogTitle ?? 'Mod Catalog'}</h2>
+            <p className="type-body mt-1.5">
               {selectedProfile ? (
                 <>
-                  {' '}
-                  · Adding to profile <span className="text-launcher-accent">{selectedProfile.name}</span>
+                  Adding to{' '}
+                  <span className="font-semibold text-launcher-accent">{selectedProfile.name}</span>
                 </>
-              ) : null}
+              ) : (
+                (game?.catalogSubtitle ?? 'Browse mods or manage your installed library.')
+              )}
             </p>
           </div>
 
@@ -320,7 +346,7 @@ export default function ModsPage({ onNavigateSettings }: ModsPageProps): React.J
                 className={[
                   'rounded-lg px-4 py-2 text-xs font-bold uppercase tracking-wider transition-all',
                   activeTab === id
-                    ? 'bg-launcher-accent/15 text-launcher-accent shadow-[inset_0_0_0_1px_rgba(0,230,118,0.2)]'
+                    ? 'bg-launcher-accent/15 text-launcher-accent shadow-[inset_0_0_0_1px_var(--color-launcher-glow)]'
                     : 'text-launcher-muted hover:text-launcher-text'
                 ].join(' ')}
               >
@@ -352,19 +378,19 @@ export default function ModsPage({ onNavigateSettings }: ModsPageProps): React.J
             resultCount={filteredCatalog.length}
           />
 
-          <div className="min-w-0 flex-1 overflow-y-auto p-4">
+          <div className="min-w-0 flex-1 overflow-y-auto p-6">
             {filteredCatalog.length === 0 ? (
               <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-launcher-border bg-launcher-surface/30 p-12 text-center">
-                <p className="text-sm text-launcher-muted">No mods match your search or filter.</p>
+                <p className="type-body">No mods match your search or filter.</p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <motion.div
                   key={`${activeCategory}-${searchQuery}`}
                   variants={staggerContainer}
                   initial="hidden"
                   animate="show"
-                  className="space-y-3"
+                  className="space-y-4"
                 >
                   {filteredCatalog.map((mod) => {
                     const libraryModId = installedMap[mod.id]
@@ -392,55 +418,57 @@ export default function ModsPage({ onNavigateSettings }: ModsPageProps): React.J
           </div>
         </div>
       ) : (
-        <div className="min-h-0 flex-1 overflow-y-auto p-6">
-          <div className="mb-4 flex items-center justify-between gap-4">
-            <p className="text-sm text-launcher-muted">
-              {installedMods.length} installed mod{installedMods.length === 1 ? '' : 's'}
-            </p>
-            <MotionButton
-              disabled={importing || gamePathMissing}
-              title={gamePathMissing ? 'Set your game folder first' : undefined}
-              onClick={() => void handleBrowseImport()}
-              className="rounded-xl border border-launcher-accent/40 bg-launcher-accent/10 px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-launcher-accent hover:bg-launcher-accent/20 disabled:opacity-50"
-            >
-              {importing ? 'Importing…' : 'Import .zip'}
-            </MotionButton>
-          </div>
-
-          {installedMods.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-launcher-border bg-launcher-surface/30 px-6 py-16 text-center">
-              <p className="text-sm text-launcher-muted">
-                No mods installed yet. Browse the catalog or import a .zip archive.
-              </p>
-              <MotionButton
-                onClick={() => setActiveTab('browse')}
-                className="mt-4 rounded-xl bg-gradient-to-r from-launcher-accent to-launcher-accent-dim px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-launcher-bg"
+        <div className="min-h-0 flex-1 overflow-y-auto px-8 py-8">
+          <div className="mx-auto w-full max-w-4xl space-y-8">
+            {installedMods.length === 0 ? (
+              <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-launcher-border bg-launcher-surface/30 px-6 py-16 text-center">
+                <p className="type-body">
+                  No mods installed yet. Browse the catalog or import a .zip archive below.
+                </p>
+                <MotionButton
+                  onClick={() => setActiveTab('browse')}
+                  className="btn-primary mt-6"
+                >
+                  Browse catalog
+                </MotionButton>
+              </div>
+            ) : (
+              <motion.div
+                key="installed-list"
+                variants={staggerContainer}
+                initial="hidden"
+                animate="show"
+                className="space-y-3"
               >
-                Browse catalog
-              </MotionButton>
-            </div>
-          ) : (
-            <motion.div
-              key="installed-list"
-              variants={staggerContainer}
-              initial="hidden"
-              animate="show"
-              className="space-y-2"
-            >
-              {installedMods.map((mod) => (
-                <InstalledModRow
-                  key={mod.id}
-                  mod={mod}
-                  busy={busyModId === mod.id || importing}
-                  profileMode={profileMode}
-                  inProfile={profileModIds.has(mod.id)}
-                  actionsLocked={gamePathMissing}
-                  onToggleMod={(modId, enabled) => void handleToggle(modId, enabled)}
-                  onDelete={(modId) => void handleDelete(modId)}
-                />
-              ))}
-            </motion.div>
-          )}
+                {installedMods.map((mod) => (
+                  <InstalledModRow
+                    key={mod.id}
+                    mod={mod}
+                    busy={busyModId === mod.id || importing}
+                    profileMode={profileMode}
+                    inProfile={profileModIds.has(mod.id)}
+                    actionsLocked={gamePathMissing}
+                    onToggleMod={(modId, enabled) => void handleToggle(modId, enabled)}
+                    onDelete={(modId) => void handleDelete(modId)}
+                  />
+                ))}
+              </motion.div>
+            )}
+
+            <section>
+              <h3 className="type-section mb-4">Import mods</h3>
+              <ModDropZone
+                busy={importing}
+                onImport={handleImportZip}
+                onBrowse={handleBrowseImport}
+                autoInstall={false}
+                onAutoInstallChange={() => undefined}
+                isPremium={isPremium}
+                disabled={gamePathMissing}
+                disabledReason="Set your game folder first"
+              />
+            </section>
+          </div>
         </div>
       )}
     </div>

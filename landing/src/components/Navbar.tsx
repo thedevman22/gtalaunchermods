@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { SITE } from '@/lib/constants'
+import { NAV_LINKS, SITE } from '@/lib/constants'
 import NavbarAuth from '@/components/NavbarAuth'
 import ModHarborLogo from '@/components/ModHarborLogo'
 
@@ -13,15 +13,11 @@ export default function Navbar(): React.JSX.Element {
         </Link>
 
         <nav className="hidden items-center gap-8 text-sm text-muted md:flex">
-          <a href="#how-it-works" className="transition-colors hover:text-text">
-            How It Works
-          </a>
-          <a href="#games" className="transition-colors hover:text-text">
-            Games
-          </a>
-          <a href="#pricing" className="transition-colors hover:text-text">
-            Pricing
-          </a>
+          {NAV_LINKS.map((link) => (
+            <Link key={link.href} href={link.href} className="transition-colors hover:text-text">
+              {link.label}
+            </Link>
+          ))}
         </nav>
 
         <NavbarAuth />

@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { Check, Sparkles } from 'lucide-react'
 import MotionButton from '@renderer/components/MotionButton'
 import TierBadge from '@renderer/components/TierBadge'
 import { TIER_PERKS } from '../../../shared/billing'
@@ -43,9 +44,9 @@ export default function TierUpgradeCelebration({
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ delay: 0.15, type: 'spring', stiffness: 300, damping: 18 }}
-          className="relative mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-launcher-accent to-launcher-accent-dim text-4xl shadow-[0_0_40px_var(--color-launcher-glow)]"
+          className="relative mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-launcher-accent to-launcher-accent-dim text-launcher-bg shadow-[0_0_40px_var(--color-launcher-glow)]"
         >
-          ✦
+          <Sparkles className="h-9 w-9" strokeWidth={2} aria-hidden />
         </motion.div>
 
         <motion.p
@@ -89,7 +90,11 @@ export default function TierUpgradeCelebration({
               transition={{ delay: 0.52 + index * 0.06 }}
               className="flex items-start gap-2 text-sm text-launcher-muted"
             >
-              <span className="mt-0.5 text-launcher-accent">✓</span>
+              <Check
+                className="mt-0.5 h-4 w-4 shrink-0 text-launcher-accent"
+                strokeWidth={2.5}
+                aria-hidden
+              />
               <span>{perk}</span>
             </motion.li>
           ))}

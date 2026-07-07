@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { Upload } from 'lucide-react'
 import UpgradePrompt from '@renderer/components/UpgradePrompt'
 
 interface ModDropZoneProps {
@@ -92,8 +93,8 @@ export default function ModDropZone({
           onChange={(event) => void handleFileInput(event)}
         />
 
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-launcher-accent/10 text-2xl text-launcher-accent">
-          ⬆
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-launcher-accent/10 text-launcher-accent">
+          <Upload className="h-6 w-6" strokeWidth={2} aria-hidden />
         </div>
         <p className="mt-4 text-sm font-semibold text-launcher-text">
           {isDragging ? 'Drop mod archive here' : 'Drag & drop a mod .zip'}

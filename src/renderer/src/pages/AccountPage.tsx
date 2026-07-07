@@ -31,19 +31,14 @@ export default function AccountPage(): React.JSX.Element {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="h-full overflow-y-auto px-10 py-10">
+      <div className="mx-auto w-full max-w-4xl space-y-8">
       <header className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="font-display text-2xl font-bold text-launcher-text">Account</h2>
-          <p className="mt-1 text-sm text-launcher-muted">
-            Your subscription tier, profile, and billing settings.
-          </p>
+          <h2 className="type-title">Account</h2>
+          <p className="type-body mt-1.5">Profile, subscription, and billing.</p>
         </div>
-        <button
-          type="button"
-          onClick={() => void refreshProfile()}
-          className="rounded-lg border border-launcher-border px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-launcher-muted transition-colors hover:border-launcher-accent/40 hover:text-launcher-accent"
-        >
+        <button type="button" onClick={() => void refreshProfile()} className="btn-ghost">
           Refresh
         </button>
       </header>
@@ -61,16 +56,14 @@ export default function AccountPage(): React.JSX.Element {
         </div>
       ) : null}
 
-      <div className="flex flex-col gap-6 rounded-2xl border border-launcher-border bg-launcher-surface/60 p-6 sm:flex-row sm:items-start">
+      <div className="flex flex-col gap-8 rounded-2xl border border-launcher-border bg-launcher-surface/60 p-8 sm:flex-row sm:items-start">
         <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-launcher-accent/30 to-launcher-elevated text-3xl font-bold text-launcher-accent">
           {initials}
         </div>
 
         <div className="flex-1">
           <h3 className="text-lg font-bold text-launcher-text">{email}</h3>
-          <p className="mt-1 text-sm text-launcher-muted">User ID: {profile?.id.slice(0, 8) ?? '—'}…</p>
-
-          <div className="mt-4 flex flex-wrap items-center gap-2">
+          <div className="mt-3 flex flex-wrap items-center gap-2">
             <TierBadge tier={tier} label={badgeLabel} />
             <span className="rounded-full border border-launcher-border bg-launcher-elevated px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-launcher-muted">
               Member since {memberSince}
@@ -81,25 +74,22 @@ export default function AccountPage(): React.JSX.Element {
               </span>
             ) : null}
           </div>
-
-          <p className="mt-4 text-sm text-launcher-muted">
-            Current plan:{' '}
-            <span className="font-semibold capitalize text-launcher-text">{tier}</span>
-            {tier === 'free' && ' — Upgrade to unlock one-click install and unlimited profiles.'}
-            {tier === 'pro' && ' — Full mod automation and batch tools unlocked.'}
-            {tier === 'elite' && ' — All premium features unlocked.'}
-          </p>
         </div>
 
-        <div className="flex shrink-0 flex-col gap-2">
-          {tier !== 'pro' && tier !== 'elite' && (
+        <div className="flex shrink-0 flex-col gap-3">
+          {tier === 'free' && (
             <button
               type="button"
               disabled={awaitingPayment}
               onClick={() => handleUpgrade('pro')}
-              className="rounded-lg border border-blue-400/50 bg-blue-500/15 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-blue-300 transition-colors hover:bg-blue-500/25 disabled:opacity-50"
+              className="btn-primary px-5 py-2.5"
             >
               {awaitingPayment ? 'Checkout open…' : 'Upgrade to Pro'}
+            </button>
+          )}
+          {(tier === 'pro' || tier === 'elite') && (
+            <button type="button" onClick={handleManageSubscription} className="btn-primary px-5 py-2.5">
+              Manage Subscription
             </button>
           )}
           {tier !== 'elite' && (
@@ -107,18 +97,9 @@ export default function AccountPage(): React.JSX.Element {
               type="button"
               disabled={awaitingPayment}
               onClick={() => handleUpgrade('elite')}
-              className="rounded-lg border border-amber-400/50 bg-amber-500/15 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-amber-200 transition-colors hover:bg-amber-500/25 disabled:opacity-50"
+              className="btn-ghost"
             >
               {awaitingPayment ? 'Checkout open…' : 'Upgrade to Elite'}
-            </button>
-          )}
-          {(tier === 'pro' || tier === 'elite') && (
-            <button
-              type="button"
-              onClick={handleManageSubscription}
-              className="rounded-lg bg-gradient-to-r from-launcher-accent to-launcher-accent-dim px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-launcher-bg shadow-[0_0_20px_var(--color-launcher-glow)] transition-transform hover:scale-[1.02]"
-            >
-              Manage Subscription
             </button>
           )}
           <button
@@ -131,7 +112,7 @@ export default function AccountPage(): React.JSX.Element {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-5 sm:grid-cols-3">
         {[
           {
             tier: 'free' as const,
@@ -152,7 +133,7 @@ export default function AccountPage(): React.JSX.Element {
           <div
             key={plan.tier}
             className={[
-              'rounded-xl border p-5 transition-colors',
+              'rounded-2xl border p-6 transition-colors',
               tier === plan.tier
                 ? 'border-launcher-accent/50 bg-launcher-accent/5'
                 : 'border-launcher-border bg-launcher-elevated/40'
@@ -186,6 +167,7 @@ export default function AccountPage(): React.JSX.Element {
             )}
           </div>
         ))}
+      </div>
       </div>
     </div>
   )

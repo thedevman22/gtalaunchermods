@@ -22,6 +22,32 @@
     @apply box-border;
   }
 
+  /* Typography scale — use these four everywhere instead of ad-hoc sizes. */
+  .type-title {
+    @apply font-display text-2xl font-bold tracking-tight text-launcher-text;
+  }
+
+  .type-section {
+    @apply text-xs font-semibold uppercase tracking-[0.18em] text-launcher-muted;
+  }
+
+  .type-body {
+    @apply text-sm leading-relaxed text-launcher-muted;
+  }
+
+  .type-caption {
+    @apply text-xs text-launcher-muted;
+  }
+
+  /* Button hierarchy — one primary per screen, everything else ghost. */
+  .btn-primary {
+    @apply rounded-xl bg-gradient-to-r from-launcher-accent to-launcher-accent-dim px-6 py-3 text-xs font-bold uppercase tracking-wider text-launcher-bg shadow-[0_4px_20px_var(--color-launcher-glow)] disabled:opacity-50;
+  }
+
+  .btn-ghost {
+    @apply rounded-lg border border-launcher-border px-4 py-2 text-xs font-semibold uppercase tracking-wider text-launcher-muted transition-colors hover:border-launcher-accent/40 hover:text-launcher-accent disabled:opacity-50;
+  }
+
   html,
   body,
   #root {
@@ -216,6 +242,26 @@
       opacity: 0.9;
       transform: translateX(20%);
     }
+  }
+
+  @keyframes skeleton-shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  .skeleton-shimmer {
+    background: linear-gradient(
+      90deg,
+      var(--color-launcher-elevated) 25%,
+      var(--color-launcher-border) 50%,
+      var(--color-launcher-elevated) 75%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 2.2s ease-in-out infinite;
   }
 
   .liquid-blob {

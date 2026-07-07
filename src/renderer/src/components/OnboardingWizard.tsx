@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Check } from 'lucide-react'
 import ModHarborLogo from '@renderer/components/ModHarborLogo'
 import MotionButton from '@renderer/components/MotionButton'
 import WaveBackground from '@renderer/components/WaveBackground'
@@ -264,9 +265,20 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps):
                     launches, and a clean setup flow. This wizard takes about a minute.
                   </p>
                   <ul className="mx-auto mt-8 max-w-md space-y-2 text-left text-sm text-launcher-muted">
-                    <li>✦ Pick your GTA V edition</li>
-                    <li>✦ Locate your game install automatically</li>
-                    <li>✦ Install modding prerequisites</li>
+                    {[
+                      'Pick your GTA V edition',
+                      'Locate your game install automatically',
+                      'Install modding prerequisites'
+                    ].map((item) => (
+                      <li key={item} className="flex items-start gap-2">
+                        <Check
+                          className="mt-0.5 h-4 w-4 shrink-0 text-launcher-accent"
+                          strokeWidth={2.5}
+                          aria-hidden
+                        />
+                        <span>{item}</span>
+                      </li>
+                    ))}
                   </ul>
                 </div>
               )}

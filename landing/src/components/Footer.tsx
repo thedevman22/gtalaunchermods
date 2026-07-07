@@ -11,7 +11,7 @@ export default function Footer(): React.JSX.Element {
           <span className="font-display text-sm font-bold">{SITE.name}</span>
         </div>
 
-        <nav className="flex items-center gap-6 text-sm text-muted">
+        <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted">
           <a
             href={SITE.discordUrl}
             target="_blank"
@@ -25,6 +25,9 @@ export default function Footer(): React.JSX.Element {
           </Link>
           <Link href={SITE.privacyUrl} className="transition-colors hover:text-text">
             Privacy
+          </Link>
+          <Link href={SITE.legalUrl} className="transition-colors hover:text-text">
+            Safety &amp; Fair Play
           </Link>
         </nav>
       </div>

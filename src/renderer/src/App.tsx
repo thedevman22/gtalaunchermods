@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import Sidebar from '@renderer/components/Sidebar'
+import SpotlightTour from '@renderer/components/SpotlightTour'
 import UpdateBanner from '@renderer/components/UpdateBanner'
 import SplashScreen from '@renderer/components/SplashScreen'
 import OnboardingWizard from '@renderer/components/OnboardingWizard'
@@ -14,21 +15,21 @@ import { UpgradeFlowProvider } from '@renderer/context/UpgradeFlowContext'
 import { LaunchProvider } from '@renderer/context/LaunchContext'
 import { ProfileProvider } from '@renderer/context/ProfileContext'
 import { ModSyncProvider } from '@renderer/context/ModSyncContext'
+import { useSetupStatus } from '@renderer/hooks/useSetupStatus'
 import { useStartupSequence } from '@renderer/hooks/useStartupSequence'
 import { pageTransition } from '@renderer/lib/motion'
+import { getTourSteps, hasSeenTour, markTourSeen } from '@renderer/lib/tour'
 import type { OnboardingState } from '../../shared/onboarding'
 import type { NavItem } from '@renderer/types/navigation'
 
-const PAGE_TITLES: Record<NavItem, string> = {
-  home: 'Home',
-  mods: 'Mods',
-  settings: 'Settings',
-  account: 'Account'
-}
-
 function MainShell(): React.JSX.Element {
   const [activeNav, setActiveNav] = useState<NavItem>('home')
-  const { isOfflineDev } = useAuth()
+  const { user, isOfflineDev } = useAuth()
+  const setupStatus = useSetupStatus()
+  const [tourOpen, setTourOpen] = useState(false)
+  const tourTimer = useRef<number | null>(null)
+
+  const tourUserKey = user?.id ?? (isOfflineDev ? 'offline-dev' : 'anon')
 
   useEffect(() => {
     void window.api.setup.getStatus().then((status) => {
@@ -46,6 +47,26 @@ function MainShell(): React.JSX.Element {
     return unsubscribe
   }, [])
 
+  // First dashboard visit: run the welcome tour once per user.
+  useEffect(() => {
+    if (tourOpen || activeNav !== 'home' || hasSeenTour(tourUserKey)) return
+    const timer = window.setTimeout(() => setTourOpen(true), 900)
+    return () => window.clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- tourOpen intentionally omitted
+  }, [activeNav, tourUserKey])
+
+  const startTour = (): void => {
+    setActiveNav('home')
+    if (tourTimer.current !== null) window.clearTimeout(tourTimer.current)
+    // Give the page transition time to settle before measuring targets.
+    tourTimer.current = window.setTimeout(() => setTourOpen(true), 450)
+  }
+
+  const closeTour = (): void => {
+    markTourSeen(tourUserKey)
+    setTourOpen(false)
+  }
+
   const renderPage = (): React.JSX.Element => {
     switch (activeNav) {
       case 'home':
@@ -53,7 +74,7 @@ function MainShell(): React.JSX.Element {
       case 'mods':
         return <ModsPage onNavigateSettings={() => setActiveNav('settings')} />
       case 'settings':
-        return <SettingsPage />
+        return <SettingsPage onStartTour={startTour} />
       case 'account':
         return <AccountPage />
     }
@@ -70,13 +91,7 @@ function MainShell(): React.JSX.Element {
             Offline dev mode — add Supabase keys to <code className="text-amber-100">.env</code> to enable login
           </div>
         )}
-        <header className="flex h-12 shrink-0 items-center border-b border-launcher-border/60 px-6">
-          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-launcher-muted">
-            {PAGE_TITLES[activeNav]}
-          </span>
-        </header>
-
-        <div className="flex-1 overflow-y-auto overflow-x-hidden p-6">
+        <div className="min-h-0 flex-1 overflow-hidden">
           <AnimatePresence mode="wait">
             <motion.div key={activeNav} {...pageTransition} className="h-full">
               {renderPage()}
@@ -84,6 +99,13 @@ function MainShell(): React.JSX.Element {
           </AnimatePresence>
         </div>
       </main>
+
+      {tourOpen && (
+        <SpotlightTour
+          steps={getTourSteps(setupStatus?.gamePathConfigured ?? false)}
+          onClose={closeTour}
+        />
+      )}
     </div>
   )
 }
