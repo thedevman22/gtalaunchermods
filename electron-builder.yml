@@ -1,0 +1,77 @@
+appId: com.gtamodlauncher.app
+productName: GTA Mod Launcher
+copyright: Copyright © 2026 GTA Mod Launcher
+
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - '!**/.vscode/*'
+  - '!src/*'
+  - '!electron.vite.config.{js,ts,mjs,cjs}'
+  - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
+  - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
+  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+  - '!landing/**'
+  - '!server/**'
+
+asarUnpack:
+  - 'resources/**'
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  executableName: gta-mod-launcher
+  icon: build/icon.ico
+  # Authenticode signing — provide certificate via environment variables at build time:
+  #   CSC_LINK          path to .pfx or base64-encoded certificate
+  #   CSC_KEY_PASSWORD  certificate password
+  # Optional Windows-specific overrides: WIN_CSC_LINK, WIN_CSC_KEY_PASSWORD
+  signAndEditExecutable: true
+  signtoolOptions:
+    signingHashAlgorithms:
+      - sha256
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  allowElevation: true
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  installerHeaderIcon: build/icon.ico
+  artifactName: ${productName}-${version}-setup.${ext}
+  shortcutName: ${productName}
+  uninstallDisplayName: ${productName}
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  deleteAppDataOnUninstall: false
+
+mac:
+  entitlementsInherit: build/entitlements.mac.plist
+  icon: build/icon.icns
+  extendInfo:
+    - NSCameraUsageDescription: Application requests access to the device's camera.
+    - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
+    - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
+    - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
+  notarize: false
+
+dmg:
+  artifactName: ${productName}-${version}.${ext}
+
+linux:
+  target:
+    - AppImage
+    - deb
+  maintainer: gta-mod-launcher
+  category: Game
+  icon: build/icon.png
+
+appImage:
+  artifactName: ${productName}-${version}.${ext}
+
+npmRebuild: false
