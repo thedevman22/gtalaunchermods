@@ -61,6 +61,7 @@ jobs:
         if: steps.check.outputs.skip != 'true'
         run: npm ci
 
+      # Writes real keys when secrets are set; otherwise empty placeholders (build still ships).
       - name: Sync Supabase config into bundle
         if: steps.check.outputs.skip != 'true'
         run: node scripts/sync-supabase-config.mjs
@@ -69,6 +70,11 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_MODHARBOR_WEBSITE_URL: ${{ secrets.VITE_MODHARBOR_WEBSITE_URL }}
           VITE_BILLING_API_URL: ${{ secrets.VITE_BILLING_API_URL }}
+
+      - name: Note missing Supabase secrets
+        if: steps.check.outputs.skip != 'true' && secrets.VITE_SUPABASE_URL == ''
+        run: |
+          echo "::warning::VITE_SUPABASE_URL secret is not set — this release will not support sign-in until secrets are added and a new release is published."
 
       - name: Build and publish Windows installer
         if: steps.check.outputs.skip != 'true'
