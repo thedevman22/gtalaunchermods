@@ -2,7 +2,7 @@
  * Release metadata for the Windows installer.
  * `version` is kept in sync with the root package.json by scripts/bump-version.mjs.
  */
-const VERSION = '1.0.8'
+const VERSION = '1.0.9'
 
 const GITHUB_OWNER = 'thedevman22'
 const GITHUB_REPO = 'gtalaunchermods'
