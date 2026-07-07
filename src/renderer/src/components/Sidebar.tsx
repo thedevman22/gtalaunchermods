@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { House, Package, Settings, UserRound, type LucideIcon } from 'lucide-react'
 import type { NavItem } from '@renderer/types/navigation'
 import ModHarborLogo from '@renderer/components/ModHarborLogo'
+import UpdateSidebarIndicator from '@renderer/components/UpdateSidebarIndicator'
 import { useAuth } from '@renderer/context/AuthContext'
+import { useUpdate } from '@renderer/context/UpdateContext'
 
 interface SidebarProps {
   active: NavItem
@@ -19,6 +21,7 @@ const navItems: { id: NavItem; label: string; icon: LucideIcon }[] = [
 export default function Sidebar({ active, onNavigate }: SidebarProps): React.JSX.Element {
   const [setupComplete, setSetupComplete] = useState(true)
   const { isGuest, profile, user, openAuthModal } = useAuth()
+  const { appVersion } = useUpdate()
   const accountLabel = isGuest ? 'Guest' : (profile?.email ?? user?.email ?? 'Account')
 
   useEffect(() => {
@@ -123,6 +126,16 @@ export default function Sidebar({ active, onNavigate }: SidebarProps): React.JSX
             <span className="text-xs text-launcher-text">
               {setupComplete ? 'Ready to launch' : 'Setup required'}
             </span>
+          </div>
+        </div>
+
+        <div className="mt-4 border-t border-launcher-border/70 pt-4">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-launcher-muted">
+            Version
+          </p>
+          <p className="mt-1 text-xs tabular-nums text-launcher-text">v{appVersion}</p>
+          <div className="mt-2">
+            <UpdateSidebarIndicator />
           </div>
         </div>
       </div>

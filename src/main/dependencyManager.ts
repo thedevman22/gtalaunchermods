@@ -1,47 +1,113 @@
 import { copyFileSync, existsSync } from 'fs'
-import { join } from 'path'
-import { app, BrowserWindow, dialog, ipcMain } from 'electron'
+import { basename, join } from 'path'
+import { BrowserWindow, dialog, ipcMain } from 'electron'
 import type { OperationResult } from '../shared/game'
-import type { DependencyId, DependencyStatus, SetupStatus } from '../shared/dependencies'
-import { REQUIRED_DEPENDENCIES } from '../shared/dependencies'
+import type {
+  DependencyId,
+  DependencyInstallOutcome,
+  DependencyStatus,
+  SetupRepairResult,
+  SetupStatus
+} from '../shared/dependencies'
+import { PERMISSION_DENIED_MESSAGE, REQUIRED_DEPENDENCIES } from '../shared/dependencies'
 import { getResolvedGamePath, isOnboardingComplete, validateGamePath } from './gameLauncher'
+import { getDependenciesPath } from './paths'
 
-function getBundledDependenciesDir(): string {
-  if (app.isPackaged) {
-    return join(process.resourcesPath, 'app.asar.unpacked', 'resources', 'dependencies')
+const lastInstallErrors = new Map<DependencyId, string>()
+
+function isPermissionError(err: unknown): boolean {
+  if (!err || typeof err !== 'object' || !('code' in err)) {
+    return false
   }
-  return join(__dirname, '../../resources/dependencies')
+  const code = (err as NodeJS.ErrnoException).code
+  return code === 'EPERM' || code === 'EACCES'
 }
 
-function getGameRoot(): { gameRoot: string } | { error: string } {
-  const gtaExePath = getResolvedGamePath()
+async function showPermissionDeniedDialog(parent?: BrowserWindow | null): Promise<void> {
+  const window = parent ?? BrowserWindow.getFocusedWindow()
+  const options = {
+    type: 'error' as const,
+    buttons: ['OK'],
+    title: 'Administrator access required',
+    message: 'ModHarbor could not write to your GTA V folder.',
+    detail: PERMISSION_DENIED_MESSAGE
+  }
+
+  if (window) {
+    await dialog.showMessageBox(window, options)
+  } else {
+    await dialog.showMessageBox(options)
+  }
+}
+
+function resolveGameInstallRoot(): { gameRoot: string; gtaExePath: string } | { error: string } {
+  const gtaExePath = getResolvedGamePath().trim()
+  if (!gtaExePath) {
+    return { error: 'Configure your GTA V path before installing dependencies.' }
+  }
+
   const validation = validateGamePath(gtaExePath)
   if (!validation.valid || !validation.gameRoot) {
-    return { error: validation.error ?? 'GTA V path is not configured.' }
+    return { error: validation.error ?? 'GTA V path is not valid.' }
   }
-  return { gameRoot: validation.gameRoot }
+
+  if (!existsSync(gtaExePath)) {
+    return {
+      error: `GTA5.exe was not found at the configured path:\n${gtaExePath}`
+    }
+  }
+
+  const exeName = basename(gtaExePath).toLowerCase()
+  if (exeName !== 'gta5.exe' && exeName !== 'gta5_enhanced.exe') {
+    return { error: 'The configured path must point to GTA5.exe or GTA5_Enhanced.exe.' }
+  }
+
+  return { gameRoot: validation.gameRoot, gtaExePath }
 }
 
 function isBundledAvailable(fileName: string): boolean {
-  return existsSync(join(getBundledDependenciesDir(), fileName))
+  return existsSync(join(getDependenciesPath(), fileName))
 }
 
 function isInstalledInGame(gameRoot: string, fileName: string): boolean {
   return existsSync(join(gameRoot, fileName))
 }
 
+function buildStatusLabel(
+  installedInGame: boolean,
+  bundledAvailable: boolean,
+  lastInstallError?: string
+): string {
+  if (lastInstallError) {
+    return 'Install failed'
+  }
+  if (installedInGame) {
+    return 'Installed in game folder'
+  }
+  if (!bundledAvailable) {
+    return 'Not bundled with launcher'
+  }
+  return 'Missing from game folder'
+}
+
 function buildDependencyStatus(
   gameRoot: string | undefined,
   def: (typeof REQUIRED_DEPENDENCIES)[number]
 ): DependencyStatus {
+  const installedInGame = gameRoot ? isInstalledInGame(gameRoot, def.fileName) : false
+  const bundledAvailable = isBundledAvailable(def.fileName)
+  const lastInstallError = lastInstallErrors.get(def.id)
+
   return {
     id: def.id,
     fileName: def.fileName,
     name: def.name,
     description: def.description,
-    installedInGame: gameRoot ? isInstalledInGame(gameRoot, def.fileName) : false,
-    bundledAvailable: isBundledAvailable(def.fileName),
-    gamePath: gameRoot
+    installedInGame,
+    bundledAvailable,
+    gamePath: gameRoot,
+    statusLabel: buildStatusLabel(installedInGame, bundledAvailable, lastInstallError),
+    lastInstallError
   }
 }
 
@@ -76,79 +142,193 @@ function broadcastSetupChanged(): void {
   }
 }
 
-export function installDependency(dependencyId: DependencyId): OperationResult {
+interface CopyDependencyOptions {
+  repair?: boolean
+  showPermissionDialog?: boolean
+  parentWindow?: BrowserWindow | null
+}
+
+function copyDependencyToGame(
+  definition: (typeof REQUIRED_DEPENDENCIES)[number],
+  gameRoot: string,
+  options: CopyDependencyOptions = {}
+): DependencyInstallOutcome {
+  const bundledPath = join(getDependenciesPath(), definition.fileName)
+  const targetPath = join(gameRoot, definition.fileName)
+
+  if (!existsSync(bundledPath)) {
+    const error = `${definition.fileName} is not bundled with this launcher build (expected at ${bundledPath}).`
+    lastInstallErrors.set(definition.id, error)
+    return {
+      id: definition.id,
+      fileName: definition.fileName,
+      success: false,
+      error
+    }
+  }
+
+  const alreadyInstalled = existsSync(targetPath)
+  if (alreadyInstalled && !options.repair) {
+    lastInstallErrors.delete(definition.id)
+    return {
+      id: definition.id,
+      fileName: definition.fileName,
+      success: true,
+      path: targetPath
+    }
+  }
+
+  try {
+    copyFileSync(bundledPath, targetPath)
+  } catch (err) {
+    const permissionDenied = isPermissionError(err)
+    const message = permissionDenied
+      ? PERMISSION_DENIED_MESSAGE
+      : `Failed to install ${definition.fileName}: ${err instanceof Error ? err.message : String(err)}`
+
+    lastInstallErrors.set(definition.id, message)
+
+    if (permissionDenied && options.showPermissionDialog) {
+      void showPermissionDeniedDialog(options.parentWindow)
+    }
+
+    return {
+      id: definition.id,
+      fileName: definition.fileName,
+      success: false,
+      error: message,
+      permissionDenied
+    }
+  }
+
+  if (!existsSync(targetPath)) {
+    const error = `${definition.fileName} could not be verified in your GTA V folder after copying.`
+    lastInstallErrors.set(definition.id, error)
+    return {
+      id: definition.id,
+      fileName: definition.fileName,
+      success: false,
+      error
+    }
+  }
+
+  lastInstallErrors.delete(definition.id)
+  return {
+    id: definition.id,
+    fileName: definition.fileName,
+    success: true,
+    path: targetPath
+  }
+}
+
+export function installDependency(
+  dependencyId: DependencyId,
+  options: CopyDependencyOptions = {}
+): OperationResult {
   const definition = REQUIRED_DEPENDENCIES.find((item) => item.id === dependencyId)
 
   if (!definition) {
     return { success: false, error: 'Unknown dependency.' }
   }
 
-  const gamePathResult = getGameRoot()
+  const gamePathResult = resolveGameInstallRoot()
   if ('error' in gamePathResult) {
     return { success: false, error: gamePathResult.error }
   }
 
-  const { gameRoot } = gamePathResult
-  const bundledPath = join(getBundledDependenciesDir(), definition.fileName)
-  const targetPath = join(gameRoot, definition.fileName)
+  const outcome = copyDependencyToGame(definition, gamePathResult.gameRoot, {
+    ...options,
+    repair: options.repair ?? false
+  })
 
-  if (!existsSync(bundledPath)) {
-    return {
-      success: false,
-      error: `${definition.fileName} is not bundled. Place it in resources/dependencies/ and restart the launcher.`
-    }
+  broadcastSetupChanged()
+
+  if (!outcome.success) {
+    return { success: false, error: outcome.error }
   }
 
-  if (existsSync(targetPath)) {
-    return {
-      success: false,
-      error: `${definition.fileName} already exists in your GTA V folder.`
-    }
-  }
-
-  try {
-    copyFileSync(bundledPath, targetPath)
-    broadcastSetupChanged()
-    return { success: true, path: targetPath }
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    return { success: false, error: `Failed to install ${definition.fileName}: ${message}` }
-  }
+  return { success: true, path: outcome.path }
 }
 
-export function installAllMissingDependencies(): OperationResult {
-  const status = getSetupStatus()
+export function installAllMissingDependencies(
+  options: CopyDependencyOptions = {}
+): OperationResult {
+  const result = repairDependencies({ ...options, onlyMissing: true })
+  if (!result.success) {
+    return { success: false, error: result.error }
+  }
+  return { success: true }
+}
 
-  if (!status.gamePathConfigured) {
-    return { success: false, error: 'Configure your GTA V path before installing dependencies.' }
+export function repairDependencies(
+  options: CopyDependencyOptions & { onlyMissing?: boolean } = {}
+): SetupRepairResult {
+  lastInstallErrors.clear()
+
+  const gamePathResult = resolveGameInstallRoot()
+  if ('error' in gamePathResult) {
+    return {
+      success: false,
+      error: gamePathResult.error,
+      outcomes: []
+    }
   }
 
-  const missing = status.dependencies.filter(
-    (dependency) => !dependency.installedInGame && dependency.bundledAvailable
-  )
+  const { gameRoot } = gamePathResult
+  const outcomes: DependencyInstallOutcome[] = []
 
-  if (missing.length === 0) {
-    const notBundled = status.dependencies.filter(
-      (dependency) => !dependency.installedInGame && !dependency.bundledAvailable
-    )
-    if (notBundled.length > 0) {
-      return {
-        success: false,
-        error: `Missing bundled files: ${notBundled.map((d) => d.fileName).join(', ')}`
+  for (const definition of REQUIRED_DEPENDENCIES) {
+    if (options.onlyMissing && isInstalledInGame(gameRoot, definition.fileName)) {
+      outcomes.push({
+        id: definition.id,
+        fileName: definition.fileName,
+        success: true,
+        path: join(gameRoot, definition.fileName)
+      })
+      continue
+    }
+
+    if (!isBundledAvailable(definition.fileName)) {
+      if (isInstalledInGame(gameRoot, definition.fileName)) {
+        outcomes.push({
+          id: definition.id,
+          fileName: definition.fileName,
+          success: true,
+          path: join(gameRoot, definition.fileName)
+        })
+        continue
       }
-    }
-    return { success: true }
-  }
 
-  for (const dependency of missing) {
-    const result = installDependency(dependency.id)
-    if (!result.success) {
-      return result
+      const error = `${definition.fileName} is not bundled with this launcher build.`
+      lastInstallErrors.set(definition.id, error)
+      outcomes.push({
+        id: definition.id,
+        fileName: definition.fileName,
+        success: false,
+        error
+      })
+      continue
     }
+
+    outcomes.push(
+      copyDependencyToGame(definition, gameRoot, {
+        repair: true,
+        showPermissionDialog: options.showPermissionDialog,
+        parentWindow: options.parentWindow
+      })
+    )
   }
 
   broadcastSetupChanged()
-  return { success: true }
+
+  const allSucceeded = outcomes.every((outcome) => outcome.success)
+  const firstFailure = outcomes.find((outcome) => !outcome.success)
+
+  return {
+    success: allSucceeded,
+    error: allSucceeded ? undefined : firstFailure?.error,
+    outcomes
+  }
 }
 
 export function emitSetupChanged(): void {
@@ -170,8 +350,6 @@ export async function promptMissingDependenciesInstall(window: BrowserWindow): P
     return
   }
 
-  // No game path yet (user skipped setup) — the dashboard shows a
-  // non-intrusive "Finish setup" card instead of forcing the checklist open.
   if (!status.gamePathConfigured) {
     return
   }
@@ -202,7 +380,11 @@ export async function promptMissingDependenciesInstall(window: BrowserWindow): P
   })
 
   if (response === 0) {
-    const result = installAllMissingDependencies()
+    const result = repairDependencies({
+      onlyMissing: true,
+      showPermissionDialog: true,
+      parentWindow: window
+    })
     if (result.success) {
       await dialog.showMessageBox(window, {
         type: 'info',
@@ -235,11 +417,31 @@ export function assertModsAllowed(): OperationResult | null {
 
 export function registerDependencyManagerIpc(): void {
   ipcMain.handle('setup:getStatus', () => getSetupStatus())
-  ipcMain.handle('setup:install', (_event, dependencyId: unknown) => {
+
+  ipcMain.handle('setup:install', (event, dependencyId: unknown) => {
     if (dependencyId !== 'scripthookv' && dependencyId !== 'asi_loader') {
       return { success: false, error: 'Invalid dependency id.' } satisfies OperationResult
     }
-    return installDependency(dependencyId)
+    const parentWindow = BrowserWindow.fromWebContents(event.sender)
+    return installDependency(dependencyId, {
+      showPermissionDialog: true,
+      parentWindow
+    })
   })
-  ipcMain.handle('setup:installAll', () => installAllMissingDependencies())
+
+  ipcMain.handle('setup:installAll', (event) => {
+    const parentWindow = BrowserWindow.fromWebContents(event.sender)
+    return installAllMissingDependencies({
+      showPermissionDialog: true,
+      parentWindow
+    })
+  })
+
+  ipcMain.handle('setup:repair', (event) => {
+    const parentWindow = BrowserWindow.fromWebContents(event.sender)
+    return repairDependencies({
+      showPermissionDialog: true,
+      parentWindow
+    })
+  })
 }

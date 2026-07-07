@@ -4,6 +4,9 @@
     "Copy a slot below, fill in the fields, and set 'status' to 'available' (or delete the status line).",
     "The app ignores this _readme block; only the 'mods' array is read.",
     "",
+    "minimum_version — optional. Installed app versions below this value are forced to update",
+    "before using ModHarbor (set when you ship breaking changes). Example: \"1.0.14\".",
+    "",
     "Field reference:",
     "  id             — unique string, lowercase-with-dashes (e.g. 'realistic-handling-v2'). Never reuse an id.",
     "  game_id        — 'gta5' (only supported game right now).",
@@ -18,6 +21,7 @@
     "  version        — display version string (e.g. '1.2.0').",
     "  status         — 'coming_soon' renders a skeleton placeholder slot. 'available' (or omitted) makes it installable."
   ],
+  "minimum_version": "1.0.0",
   "mods": [
     {
       "id": "slot-vehicles-1",

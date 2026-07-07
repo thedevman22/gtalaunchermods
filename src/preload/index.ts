@@ -9,7 +9,7 @@ import type {
 import type { CatalogMeta, CatalogResult } from '../shared/catalog'
 import type { ModImportResult, ModListResult } from '../shared/mods'
 import type { OAuthCallbackInfo } from '../shared/profile'
-import type { SetupStatus } from '../shared/dependencies'
+import type { SetupStatus, SetupRepairResult } from '../shared/dependencies'
 import type { OnboardingState } from '../shared/onboarding'
 import type { ModProfileLimits, ModProfileManifest, ModProfileSummary } from '../shared/modProfiles'
 import type { SubscriptionTier } from '../shared/profile'
@@ -72,6 +72,7 @@ const setupApi = {
   install: (dependencyId: string): Promise<OperationResult> =>
     ipcRenderer.invoke('setup:install', dependencyId),
   installAll: (): Promise<OperationResult> => ipcRenderer.invoke('setup:installAll'),
+  repair: (): Promise<SetupRepairResult> => ipcRenderer.invoke('setup:repair'),
   onChanged: (callback: (payload: SetupStatus) => void): (() => void) => {
     const listener = (_event: Electron.IpcRendererEvent, payload: SetupStatus): void => {
       callback(payload)
@@ -174,6 +175,8 @@ const appApi = {
 const updateApi = {
   check: (): Promise<OperationResult> => ipcRenderer.invoke('update:check'),
   download: (): Promise<OperationResult> => ipcRenderer.invoke('update:download'),
+  downloadAndInstall: (): Promise<OperationResult> =>
+    ipcRenderer.invoke('update:downloadAndInstall'),
   install: (): Promise<void> => ipcRenderer.invoke('update:install'),
   getAppVersion: (): Promise<string> => ipcRenderer.invoke('update:getAppVersion'),
   getSettings: (): Promise<UpdateSettings> => ipcRenderer.invoke('update:getSettings'),

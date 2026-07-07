@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import AnimatedToggle from '@renderer/components/AnimatedToggle'
+import DependencyStatusList from '@renderer/components/DependencyStatusList'
 import MotionButton from '@renderer/components/MotionButton'
 import SignInPrompt from '@renderer/components/SignInPrompt'
 import { useAuth } from '@renderer/context/AuthContext'
+import { useSetupStatus } from '@renderer/hooks/useSetupStatus'
 import type { ThemePreference } from '../../../shared/profile'
 import type { UserPreferences } from '../../../shared/sync'
 import type { UpdateStatusPayload } from '../../../shared/update'
@@ -71,6 +73,8 @@ export default function SettingsPage({ onStartTour }: SettingsPageProps): React.
   const [updateVersion, setUpdateVersion] = useState<string | undefined>(undefined)
   const [updateBusy, setUpdateBusy] = useState(false)
   const [autoUpdate, setAutoUpdate] = useState(true)
+  const setupStatus = useSetupStatus()
+  const [repairBusy, setRepairBusy] = useState(false)
 
   const loadLocalSettings = useCallback(async (): Promise<void> => {
     const pathInfo = await window.api.game.getPath()
@@ -114,8 +118,10 @@ export default function SettingsPage({ onStartTour }: SettingsPageProps): React.
   }
 
   useEffect(() => {
-    void loadLocalSettings()
-  }, [loadLocalSettings])
+    void window.api.game.getPath().then((pathInfo) => {
+      setGamePath(pathInfo.resolvedPath || pathInfo.savedPath || '')
+    })
+  }, [])
 
   useEffect(() => {
     if (!profile) return
@@ -209,6 +215,22 @@ export default function SettingsPage({ onStartTour }: SettingsPageProps): React.
       setError(err instanceof Error ? err.message : 'Failed to pull preferences.')
     } finally {
       setBusy(false)
+    }
+  }
+
+  const handleRepairDependencies = async (): Promise<void> => {
+    setRepairBusy(true)
+    setError(null)
+    setMessage(null)
+    try {
+      const result = await window.api.setup.repair()
+      if (result.success) {
+        setMessage('Dependencies repaired successfully.')
+      } else {
+        setError(result.error ?? 'Dependency repair failed.')
+      }
+    } finally {
+      setRepairBusy(false)
     }
   }
 
@@ -316,6 +338,36 @@ export default function SettingsPage({ onStartTour }: SettingsPageProps): React.
               </MotionButton>
             ))}
           </div>
+        </div>
+
+        <div className="rounded-2xl border border-launcher-border bg-launcher-surface/60 p-6">
+          <div className="flex items-start justify-between gap-6">
+            <div>
+              <h3 className="text-sm font-semibold text-launcher-text">Modding dependencies</h3>
+              <p className="type-caption mt-1.5">
+                Script Hook V and ASI Loader must be in your GTA V folder (next to GTA5.exe).
+              </p>
+            </div>
+            <MotionButton
+              disabled={busy || repairBusy || !setupStatus?.gamePathConfigured}
+              onClick={() => void handleRepairDependencies()}
+              className="btn-primary shrink-0 px-5 py-2.5"
+            >
+              {repairBusy ? 'Repairing…' : 'Repair dependencies'}
+            </MotionButton>
+          </div>
+
+          {!setupStatus?.gamePathConfigured ? (
+            <p className="type-caption mt-4 text-amber-200/90">
+              Configure your GTA V install path above before repairing dependencies.
+            </p>
+          ) : null}
+
+          {setupStatus ? (
+            <DependencyStatusList dependencies={setupStatus.dependencies} showPath />
+          ) : (
+            <p className="type-caption mt-4">Checking dependency status…</p>
+          )}
         </div>
 
         <div className="rounded-2xl border border-launcher-border bg-launcher-surface/60 p-6">

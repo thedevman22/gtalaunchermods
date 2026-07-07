@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Check } from 'lucide-react'
-import type { DependencyId, SetupStatus } from '../../../shared/dependencies'
+import { useSetupStatus } from '@renderer/hooks/useSetupStatus'
+import type { DependencyId } from '../../../shared/dependencies'
 
 interface SetupChecklistProps {
   onComplete?: () => void
@@ -11,29 +12,19 @@ export default function SetupChecklist({
   onComplete,
   onNavigateSettings
 }: SetupChecklistProps): React.JSX.Element {
-  const [status, setStatus] = useState<SetupStatus | null>(null)
+  const status = useSetupStatus()
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const autoDetectAttempted = useRef(false)
-
-  const loadStatus = useCallback(async (): Promise<void> => {
-    const next = await window.api.setup.getStatus()
-    setStatus(next)
-    if (next.setupComplete) {
-      onComplete?.()
-    }
-  }, [onComplete])
+  const completedNotified = useRef(false)
 
   useEffect(() => {
-    void loadStatus()
-    const unsubscribe = window.api.setup.onChanged((payload) => {
-      setStatus(payload)
-      if (payload.setupComplete) {
-        onComplete?.()
-      }
-    })
-    return unsubscribe
-  }, [loadStatus, onComplete])
+    if (!status?.setupComplete || completedNotified.current) {
+      return
+    }
+    completedNotified.current = true
+    onComplete?.()
+  }, [status?.setupComplete, onComplete])
 
   useEffect(() => {
     if (!status || status.gamePathConfigured || autoDetectAttempted.current) {
@@ -53,10 +44,8 @@ export default function SetupChecklist({
         setError(result.error ?? 'Failed to save detected GTA V path.')
         return
       }
-
-      await loadStatus()
     })
-  }, [loadStatus, status])
+  }, [status])
 
   const handleBrowseGame = async (): Promise<void> => {
     setError(null)
@@ -64,7 +53,6 @@ export default function SetupChecklist({
     if (!result.success && !result.canceled) {
       setError(result.error ?? 'Failed to set game path.')
     }
-    await loadStatus()
   }
 
   const handleInstallOne = async (id: DependencyId): Promise<void> => {
@@ -75,7 +63,6 @@ export default function SetupChecklist({
       if (!result.success) {
         setError(result.error ?? 'Install failed.')
       }
-      await loadStatus()
     } finally {
       setBusy(null)
     }
@@ -89,7 +76,6 @@ export default function SetupChecklist({
       if (!result.success) {
         setError(result.error ?? 'Install failed.')
       }
-      await loadStatus()
     } finally {
       setBusy(null)
     }
@@ -176,12 +162,17 @@ export default function SetupChecklist({
               <div className="min-w-0 flex-1">
                 <h3 className="font-semibold text-launcher-text">{dependency.name}</h3>
                 <p className="mt-1 text-sm text-launcher-muted">{dependency.description}</p>
-                <p className="mt-2 font-mono text-[10px] text-launcher-muted">
-                  {dependency.fileName}
-                  {dependency.installedInGame ? ' · installed' : ' · missing'}
-                  {!dependency.bundledAvailable && !dependency.installedInGame
-                    ? ' · not bundled'
-                    : ''}
+                <p
+                  className={[
+                    'mt-2 text-xs',
+                    dependency.installedInGame
+                      ? 'text-emerald-400'
+                      : dependency.lastInstallError
+                        ? 'text-red-300'
+                        : 'text-launcher-muted'
+                  ].join(' ')}
+                >
+                  {dependency.lastInstallError ?? dependency.statusLabel}
                 </p>
                 {!dependency.installedInGame && dependency.bundledAvailable && gameStepDone && (
                   <button

@@ -15,6 +15,10 @@ export interface DependencyStatus {
   installedInGame: boolean
   bundledAvailable: boolean
   gamePath?: string
+  /** Human-readable result for the checklist UI. */
+  statusLabel: string
+  /** Set when the most recent install attempt for this file failed. */
+  lastInstallError?: string
 }
 
 export interface SetupStatus {
@@ -24,6 +28,24 @@ export interface SetupStatus {
   setupComplete: boolean
   modsAllowed: boolean
 }
+
+export interface DependencyInstallOutcome {
+  id: DependencyId
+  fileName: string
+  success: boolean
+  error?: string
+  path?: string
+  permissionDenied?: boolean
+}
+
+export interface SetupRepairResult {
+  success: boolean
+  error?: string
+  outcomes: DependencyInstallOutcome[]
+}
+
+export const PERMISSION_DENIED_MESSAGE =
+  'ModHarbor could not write to your GTA V folder. If the game is installed under Program Files, close ModHarbor, right-click it, and choose "Run as administrator", then try again.'
 
 export const REQUIRED_DEPENDENCIES: DependencyDefinition[] = [
   {

@@ -39,6 +39,8 @@ export type CatalogSource = 'remote' | 'cache' | 'bundled'
 export interface CatalogMeta {
   refreshedAt: string | null
   source: CatalogSource
+  /** Remote policy: users below this app version must update before using ModHarbor. */
+  minimumVersion: string | null
 }
 
 export const MOD_CATEGORIES: { id: ModCategory | 'all'; label: string }[] = [

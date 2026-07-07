@@ -32,23 +32,27 @@ function getCacheMetaPath(): string {
 }
 
 let activeMods: CatalogMod[] = []
-let catalogMeta: CatalogMeta = { refreshedAt: null, source: 'bundled' }
+let catalogMeta: CatalogMeta = { refreshedAt: null, source: 'bundled', minimumVersion: null }
 
-function parseCatalogJson(text: string): CatalogMod[] {
-  const parsed = JSON.parse(text) as { mods?: CatalogMod[] }
-  return parsed.mods ?? []
+function parseCatalogFile(text: string): { mods: CatalogMod[]; minimumVersion: string | null } {
+  const parsed = JSON.parse(text) as { mods?: CatalogMod[]; minimum_version?: string }
+  const minimumVersion = parsed.minimum_version?.trim() || null
+  return {
+    mods: parsed.mods ?? [],
+    minimumVersion
+  }
 }
 
-function readBundledCatalog(): CatalogMod[] {
+function readBundledCatalog(): { mods: CatalogMod[]; minimumVersion: string | null } {
   const catalogPath = getBundledCatalogPath()
   if (!existsSync(catalogPath)) {
-    return []
+    return { mods: [], minimumVersion: null }
   }
 
   try {
-    return parseCatalogJson(readFileSync(catalogPath, 'utf-8'))
+    return parseCatalogFile(readFileSync(catalogPath, 'utf-8'))
   } catch {
-    return []
+    return { mods: [], minimumVersion: null }
   }
 }
 
@@ -59,27 +63,36 @@ function readDiskCache(): { mods: CatalogMod[]; meta: CatalogMeta } | null {
   }
 
   try {
-    const mods = parseCatalogJson(readFileSync(modsPath, 'utf-8'))
-    let meta: CatalogMeta = { refreshedAt: null, source: 'cache' }
+    const file = parseCatalogFile(readFileSync(modsPath, 'utf-8'))
+    let meta: CatalogMeta = {
+      refreshedAt: null,
+      source: 'cache',
+      minimumVersion: file.minimumVersion
+    }
     const metaPath = getCacheMetaPath()
     if (existsSync(metaPath)) {
-      meta = JSON.parse(readFileSync(metaPath, 'utf-8')) as CatalogMeta
-      meta.source = 'cache'
+      const stored = JSON.parse(readFileSync(metaPath, 'utf-8')) as CatalogMeta
+      meta = { ...stored, source: 'cache', minimumVersion: file.minimumVersion ?? stored.minimumVersion ?? null }
     }
-    return { mods, meta }
+    return { mods: file.mods, meta }
   } catch {
     return null
   }
 }
 
-function writeDiskCache(mods: CatalogMod[]): CatalogMeta {
+function writeDiskCache(mods: CatalogMod[], minimumVersion: string | null): CatalogMeta {
   const cacheDir = getCacheDir()
   mkdirSync(cacheDir, { recursive: true })
   const meta: CatalogMeta = {
     refreshedAt: new Date().toISOString(),
-    source: 'remote'
+    source: 'remote',
+    minimumVersion
   }
-  writeFileSync(getCacheModsPath(), JSON.stringify({ mods }, null, 2), 'utf-8')
+  writeFileSync(
+    getCacheModsPath(),
+    JSON.stringify({ mods, minimum_version: minimumVersion }, null, 2),
+    'utf-8'
+  )
   writeFileSync(getCacheMetaPath(), JSON.stringify(meta), 'utf-8')
   return meta
 }
@@ -119,6 +132,7 @@ function applyCatalog(mods: CatalogMod[], meta: CatalogMeta): CatalogMeta {
   activeMods = mods
   catalogMeta = meta
   notifyCatalogChanged()
+  void import('./autoUpdater').then(({ syncUpdatePolicy }) => syncUpdatePolicy())
   return meta
 }
 
@@ -128,16 +142,21 @@ function loadFromCacheOrBundled(): CatalogMeta {
     return applyCatalog(disk.mods, disk.meta)
   }
 
-  return applyCatalog(readBundledCatalog(), { refreshedAt: null, source: 'bundled' })
+  const bundled = readBundledCatalog()
+  return applyCatalog(bundled.mods, {
+    refreshedAt: null,
+    source: 'bundled',
+    minimumVersion: bundled.minimumVersion
+  })
 }
 
 export async function refreshCatalog(): Promise<CatalogMeta> {
   if (CATALOG_URL) {
     try {
       const text = await fetchText(CATALOG_URL)
-      const mods = parseCatalogJson(text)
-      const meta = writeDiskCache(mods)
-      return applyCatalog(mods, meta)
+      const file = parseCatalogFile(text)
+      const meta = writeDiskCache(file.mods, file.minimumVersion)
+      return applyCatalog(file.mods, meta)
     } catch (err) {
       console.warn('Remote catalog fetch failed, using cache or bundled fallback:', err)
     }
@@ -152,6 +171,10 @@ export async function initCatalog(): Promise<CatalogMeta> {
 
 export function getCatalogMeta(): CatalogMeta {
   return catalogMeta
+}
+
+export function getCatalogMinimumVersion(): string | null {
+  return catalogMeta.minimumVersion
 }
 
 function getActiveMods(): CatalogMod[] {
@@ -306,8 +329,9 @@ export function registerCatalogWatcher(): void {
   if (!existsSync(catalogPath)) return
 
   watch(catalogPath, () => {
-    activeMods = readBundledCatalog()
-    catalogMeta = { refreshedAt: null, source: 'bundled' }
+    const bundled = readBundledCatalog()
+    activeMods = bundled.mods
+    catalogMeta = { refreshedAt: null, source: 'bundled', minimumVersion: bundled.minimumVersion }
     notifyCatalogChanged()
   })
 }

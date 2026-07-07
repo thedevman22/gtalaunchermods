@@ -27,6 +27,12 @@ asar: true
 asarUnpack:
   - resources/**
 
+extraResources:
+  - from: resources/dependencies
+    to: dependencies
+    filter:
+      - '**/*'
+
 win:
   target:
     - target: nsis

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import Sidebar from '@renderer/components/Sidebar'
 import SpotlightTour from '@renderer/components/SpotlightTour'
-import UpdateBanner from '@renderer/components/UpdateBanner'
+import RequiredUpdateOverlay from '@renderer/components/RequiredUpdateOverlay'
 import SplashScreen from '@renderer/components/SplashScreen'
 import OnboardingWizard from '@renderer/components/OnboardingWizard'
 import HomePage from '@renderer/pages/HomePage'
@@ -10,6 +10,7 @@ import ModsPage from '@renderer/pages/ModsPage'
 import SettingsPage from '@renderer/pages/SettingsPage'
 import AccountPage from '@renderer/pages/AccountPage'
 import { AuthProvider, useAuth } from '@renderer/context/AuthContext'
+import { UpdateProvider } from '@renderer/context/UpdateContext'
 import { UpgradeFlowProvider } from '@renderer/context/UpgradeFlowContext'
 import { LaunchProvider } from '@renderer/context/LaunchContext'
 import { ProfileProvider } from '@renderer/context/ProfileContext'
@@ -84,7 +85,6 @@ function MainShell(): React.JSX.Element {
       <Sidebar active={activeNav} onNavigate={setActiveNav} />
 
       <main className="flex min-w-0 flex-1 flex-col">
-        <UpdateBanner />
         {isOfflineDev && (
           <div className="border-b border-amber-500/30 bg-amber-500/10 px-6 py-2 text-center text-xs text-amber-200">
             Offline dev mode — add Supabase keys to <code className="text-amber-100">.env</code> to enable login
@@ -124,11 +124,14 @@ function AppContent(): React.JSX.Element {
 
   if (!showMain) {
     return (
-      <SplashScreen
-        progress={startup.progress}
-        statusText={startup.statusText}
-        exiting={startup.phase === 'exiting'}
-      />
+      <>
+        <RequiredUpdateOverlay />
+        <SplashScreen
+          progress={startup.progress}
+          statusText={startup.statusText}
+          exiting={startup.phase === 'exiting'}
+        />
+      </>
     )
   }
 
@@ -143,6 +146,7 @@ function AppContent(): React.JSX.Element {
   if (!onboarding.complete) {
     return (
       <div className="app-enter h-full">
+        <RequiredUpdateOverlay />
         <OnboardingWizard onComplete={() => setOnboarding({ ...onboarding, complete: true })} />
       </div>
     )
@@ -150,6 +154,7 @@ function AppContent(): React.JSX.Element {
 
   return (
     <div className="app-enter h-full">
+      <RequiredUpdateOverlay />
       <MainShell />
     </div>
   )
@@ -157,16 +162,18 @@ function AppContent(): React.JSX.Element {
 
 export default function App(): React.JSX.Element {
   return (
-    <AuthProvider>
-      <UpgradeFlowProvider>
-        <ModSyncProvider>
-          <LaunchProvider>
-            <ProfileProvider>
-              <AppContent />
-            </ProfileProvider>
-          </LaunchProvider>
-        </ModSyncProvider>
-      </UpgradeFlowProvider>
-    </AuthProvider>
+    <UpdateProvider>
+      <AuthProvider>
+        <UpgradeFlowProvider>
+          <ModSyncProvider>
+            <LaunchProvider>
+              <ProfileProvider>
+                <AppContent />
+              </ProfileProvider>
+            </LaunchProvider>
+          </ModSyncProvider>
+        </UpgradeFlowProvider>
+      </AuthProvider>
+    </UpdateProvider>
   )
 }
