@@ -4,7 +4,23 @@ import type { UserProfile } from '../../../shared/profile'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
 
-export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey)
+const hasPlaceholderConfig =
+  supabaseUrl?.includes('your-project') || supabaseAnonKey === 'your-anon-key'
+
+export const isSupabaseConfigured = Boolean(
+  supabaseUrl && supabaseAnonKey && !hasPlaceholderConfig
+)
+
+/** Lets you use the launcher locally without a Supabase project during development. */
+export const isOfflineDevMode = import.meta.env.DEV && !isSupabaseConfigured
+
+export const OFFLINE_DEV_PROFILE: UserProfile = {
+  id: 'offline-dev-user',
+  email: 'dev@local',
+  subscription_tier: 'free',
+  role_badge: 'Free Member',
+  created_at: new Date().toISOString()
+}
 
 export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl!, supabaseAnonKey!, {

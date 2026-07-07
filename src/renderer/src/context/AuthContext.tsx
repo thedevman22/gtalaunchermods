@@ -10,7 +10,7 @@ import {
 import type { Session, User } from '@supabase/supabase-js'
 import type { SubscriptionTier, UserProfile } from '../../../shared/profile'
 import { hasTier, isPremiumTier } from '../../../shared/profile'
-import { fetchUserProfile, isSupabaseConfigured, supabase } from '@renderer/lib/supabase'
+import { fetchUserProfile, isOfflineDevMode, isSupabaseConfigured, OFFLINE_DEV_PROFILE, supabase } from '@renderer/lib/supabase'
 import { waitForTierUpgrade as pollForTierUpgrade } from '@renderer/lib/billing'
 
 interface AuthContextValue {
@@ -19,6 +19,7 @@ interface AuthContextValue {
   profile: UserProfile | null
   loading: boolean
   authError: string | null
+  isOfflineDev: boolean
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string) => Promise<void>
   signInWithGoogle: () => Promise<void>
@@ -43,6 +44,11 @@ export function AuthProvider({ children }: { children: ReactNode }): React.JSX.E
   const [authError, setAuthError] = useState<string | null>(null)
 
   const refreshProfile = useCallback(async (): Promise<UserProfile | null> => {
+    if (isOfflineDevMode) {
+      setProfile(OFFLINE_DEV_PROFILE)
+      return OFFLINE_DEV_PROFILE
+    }
+
     if (!supabase || !session?.user) {
       setProfile(null)
       return null
@@ -61,6 +67,12 @@ export function AuthProvider({ children }: { children: ReactNode }): React.JSX.E
   )
 
   useEffect(() => {
+    if (isOfflineDevMode) {
+      setProfile(OFFLINE_DEV_PROFILE)
+      setLoading(false)
+      return
+    }
+
     if (!supabase) {
       setLoading(false)
       setAuthError('Supabase is not configured. Copy .env.example to .env and add your keys.')
@@ -119,7 +131,13 @@ export function AuthProvider({ children }: { children: ReactNode }): React.JSX.E
     }
   }, [])
 
+  const offlineAuthMessage = 'Configure .env with your Supabase keys to enable sign-in.'
+
   const signIn = useCallback(async (email: string, password: string): Promise<void> => {
+    if (isOfflineDevMode) {
+      setAuthError(offlineAuthMessage)
+      throw new Error(offlineAuthMessage)
+    }
     if (!supabase) throw new Error('Supabase is not configured.')
     setAuthError(null)
 
@@ -131,6 +149,10 @@ export function AuthProvider({ children }: { children: ReactNode }): React.JSX.E
   }, [])
 
   const signUp = useCallback(async (email: string, password: string): Promise<void> => {
+    if (isOfflineDevMode) {
+      setAuthError(offlineAuthMessage)
+      throw new Error(offlineAuthMessage)
+    }
     if (!supabase) throw new Error('Supabase is not configured.')
     setAuthError(null)
 
@@ -146,6 +168,10 @@ export function AuthProvider({ children }: { children: ReactNode }): React.JSX.E
   }, [])
 
   const signInWithGoogle = useCallback(async (): Promise<void> => {
+    if (isOfflineDevMode) {
+      setAuthError(offlineAuthMessage)
+      throw new Error(offlineAuthMessage)
+    }
     if (!supabase) throw new Error('Supabase is not configured.')
     const client = supabase
     setAuthError(null)
@@ -225,9 +251,10 @@ export function AuthProvider({ children }: { children: ReactNode }): React.JSX.E
     () => ({
       session,
       user: session?.user ?? null,
-      profile,
+      profile: isOfflineDevMode ? OFFLINE_DEV_PROFILE : profile,
       loading,
       authError,
+      isOfflineDev: isOfflineDevMode,
       signIn,
       signUp,
       signInWithGoogle,
@@ -253,7 +280,7 @@ export function AuthProvider({ children }: { children: ReactNode }): React.JSX.E
     ]
   )
 
-  if (!isSupabaseConfigured && !loading) {
+  if (!isSupabaseConfigured && !isOfflineDevMode && !loading) {
     return (
       <div className="flex h-full items-center justify-center bg-launcher-bg p-8">
         <div className="max-w-md rounded-xl border border-launcher-border bg-launcher-surface p-6 text-center">
@@ -262,6 +289,12 @@ export function AuthProvider({ children }: { children: ReactNode }): React.JSX.E
             Copy <code className="text-launcher-accent">.env.example</code> to{' '}
             <code className="text-launcher-accent">.env</code> and set your Supabase URL and anon key.
           </p>
+          <ol className="mt-4 space-y-2 text-left text-xs text-launcher-muted">
+            <li>1. Create a project at supabase.com</li>
+            <li>2. Run <code className="text-launcher-accent">supabase/migrations/001_profiles.sql</code></li>
+            <li>3. Copy Project URL + anon key from Settings → API</li>
+            <li>4. Restart the launcher with <code className="text-launcher-accent">npm run dev</code></li>
+          </ol>
         </div>
       </div>
     )
