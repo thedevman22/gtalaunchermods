@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { SITE } from '@/lib/constants'
 import ScrollReveal from '@/components/ScrollReveal'
+import ModHarborLogo from '@/components/ModHarborLogo'
 
 const INSTALL_STEPS = [
   'Download the Windows installer (.exe)',
@@ -12,21 +13,21 @@ const INSTALL_STEPS = [
 
 export default function InstallSection(): React.JSX.Element {
   return (
-    <section id="install" className="border-t border-border/60 px-4 py-20 sm:px-6 lg:py-28">
+    <section id="install" className="relative border-t border-border/40 bg-surface/30 px-4 py-20 sm:px-6 lg:py-28">
       <div className="mx-auto max-w-6xl">
         <ScrollReveal className="grid gap-12 lg:grid-cols-2 lg:items-start">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.25em] text-accent">
               Install guide
             </p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight">Get started in minutes</h2>
+            <h2 className="mt-3 font-display text-3xl font-bold tracking-tight">Get started in minutes</h2>
             <p className="mt-4 text-muted">
               {SITE.name} runs on Windows 10/11. You need a legitimate copy of GTA V and mods
               installed at your own risk — we help you organize, not curate.
             </p>
             <a
               href={SITE.downloadUrl}
-              className="mt-8 inline-flex rounded-xl bg-gradient-to-r from-accent to-accent-dim px-6 py-3 text-xs font-bold uppercase tracking-wider text-bg shadow-[0_0_20px_rgba(0,230,118,0.2)] transition-transform hover:scale-[1.02]"
+              className="mt-8 inline-flex rounded-xl bg-gradient-to-r from-accent to-accent-dim px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-[0_4px_20px_rgba(43,159,212,0.25)] transition-transform hover:scale-[1.02]"
             >
               Download installer
             </a>
@@ -58,10 +59,8 @@ export function Footer(): React.JSX.Element {
         <div className="flex flex-col gap-10 md:flex-row md:items-start md:justify-between">
           <div>
             <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-accent to-accent-dim">
-                <span className="text-xs font-black text-bg">G</span>
-              </div>
-              <span className="font-bold">{SITE.name}</span>
+              <ModHarborLogo size={32} />
+              <span className="font-display font-bold">{SITE.name}</span>
             </div>
             <p className="mt-3 max-w-xs text-sm text-muted">{SITE.tagline}</p>
           </div>

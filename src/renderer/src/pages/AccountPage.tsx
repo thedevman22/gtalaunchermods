@@ -1,16 +1,15 @@
 import { useState } from 'react'
 import { useAuth } from '@renderer/context/AuthContext'
+import { useUpgradeFlow } from '@renderer/context/UpgradeFlowContext'
 import TierBadge from '@renderer/components/TierBadge'
 import { tierBadgeLabel } from '../../../shared/profile'
-import { createCheckoutSession } from '@renderer/lib/billing'
 
 const SUBSCRIPTION_PORTAL_URL =
   import.meta.env.VITE_SUBSCRIPTION_PORTAL_URL ?? 'https://billing.stripe.com/p/login/test'
 
 export default function AccountPage(): React.JSX.Element {
-  const { user, profile, session, signOut, refreshProfile, waitForTierUpgrade } = useAuth()
-  const [upgrading, setUpgrading] = useState<'pro' | 'elite' | null>(null)
-  const [billingMessage, setBillingMessage] = useState<string | null>(null)
+  const { user, profile, signOut, refreshProfile } = useAuth()
+  const { startUpgrade, awaitingPayment } = useUpgradeFlow()
   const [billingError, setBillingError] = useState<string | null>(null)
 
   const email = profile?.email ?? user?.email ?? 'Unknown'
@@ -26,36 +25,9 @@ export default function AccountPage(): React.JSX.Element {
     void window.api.auth.openExternal(SUBSCRIPTION_PORTAL_URL)
   }
 
-  const handleUpgrade = async (targetTier: 'pro' | 'elite'): Promise<void> => {
-    if (!session?.access_token) {
-      setBillingError('You must be signed in to upgrade.')
-      return
-    }
-
-    setUpgrading(targetTier)
+  const handleUpgrade = (targetTier: 'pro' | 'elite'): void => {
     setBillingError(null)
-    setBillingMessage(null)
-
-    try {
-      const checkoutUrl = await createCheckoutSession(session.access_token, targetTier)
-      await window.api.auth.openExternal(checkoutUrl)
-
-      setBillingMessage('Complete payment in your browser. Waiting for your tier to update…')
-
-      const upgraded = await waitForTierUpgrade(targetTier)
-      if (upgraded) {
-        await refreshProfile()
-        setBillingMessage(`Welcome to ${tierBadgeLabel(targetTier)}! Your account has been upgraded.`)
-      } else {
-        setBillingMessage(
-          'Payment may still be processing. Click Refresh if your tier has not updated yet.'
-        )
-      }
-    } catch (err) {
-      setBillingError(err instanceof Error ? err.message : 'Checkout failed.')
-    } finally {
-      setUpgrading(null)
-    }
+    startUpgrade(targetTier)
   }
 
   return (
@@ -76,18 +48,18 @@ export default function AccountPage(): React.JSX.Element {
         </button>
       </header>
 
-      {(billingMessage || billingError) && (
-        <div
-          className={[
-            'rounded-lg px-4 py-3 text-sm',
-            billingError
-              ? 'border border-red-500/30 bg-red-500/10 text-red-300'
-              : 'border border-launcher-accent/30 bg-launcher-accent/10 text-launcher-accent'
-          ].join(' ')}
-        >
-          {billingError ?? billingMessage}
+      {billingError ? (
+        <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+          {billingError}
         </div>
-      )}
+      ) : null}
+
+      {awaitingPayment ? (
+        <div className="rounded-lg border border-launcher-accent/30 bg-launcher-accent/10 px-4 py-3 text-sm text-launcher-accent">
+          Complete payment on the ModHarbor website. Your tier will update automatically when checkout
+          finishes — no restart needed.
+        </div>
+      ) : null}
 
       <div className="flex flex-col gap-6 rounded-2xl border border-launcher-border bg-launcher-surface/60 p-6 sm:flex-row sm:items-start">
         <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-launcher-accent/30 to-launcher-elevated text-3xl font-bold text-launcher-accent">
@@ -103,17 +75,17 @@ export default function AccountPage(): React.JSX.Element {
             <span className="rounded-full border border-launcher-border bg-launcher-elevated px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-launcher-muted">
               Member since {memberSince}
             </span>
-            {upgrading && (
+            {awaitingPayment ? (
               <span className="animate-pulse text-[10px] font-semibold uppercase tracking-wider text-launcher-accent">
-                Upgrading…
+                Awaiting payment…
               </span>
-            )}
+            ) : null}
           </div>
 
           <p className="mt-4 text-sm text-launcher-muted">
             Current plan:{' '}
             <span className="font-semibold capitalize text-launcher-text">{tier}</span>
-            {tier === 'free' && ' — Upgrade to unlock one-click install and batch mod controls.'}
+            {tier === 'free' && ' — Upgrade to unlock one-click install and unlimited profiles.'}
             {tier === 'pro' && ' — Full mod automation and batch tools unlocked.'}
             {tier === 'elite' && ' — All premium features unlocked.'}
           </p>
@@ -123,21 +95,21 @@ export default function AccountPage(): React.JSX.Element {
           {tier !== 'pro' && tier !== 'elite' && (
             <button
               type="button"
-              disabled={upgrading !== null}
-              onClick={() => void handleUpgrade('pro')}
+              disabled={awaitingPayment}
+              onClick={() => handleUpgrade('pro')}
               className="rounded-lg border border-blue-400/50 bg-blue-500/15 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-blue-300 transition-colors hover:bg-blue-500/25 disabled:opacity-50"
             >
-              {upgrading === 'pro' ? 'Opening checkout…' : 'Upgrade to Pro'}
+              {awaitingPayment ? 'Checkout open…' : 'Upgrade to Pro'}
             </button>
           )}
           {tier !== 'elite' && (
             <button
               type="button"
-              disabled={upgrading !== null}
-              onClick={() => void handleUpgrade('elite')}
+              disabled={awaitingPayment}
+              onClick={() => handleUpgrade('elite')}
               className="rounded-lg border border-amber-400/50 bg-amber-500/15 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-amber-200 transition-colors hover:bg-amber-500/25 disabled:opacity-50"
             >
-              {upgrading === 'elite' ? 'Opening checkout…' : 'Upgrade to Elite'}
+              {awaitingPayment ? 'Checkout open…' : 'Upgrade to Elite'}
             </button>
           )}
           {(tier === 'pro' || tier === 'elite') && (
@@ -164,12 +136,12 @@ export default function AccountPage(): React.JSX.Element {
           {
             tier: 'free' as const,
             title: 'Free',
-            perks: ['Manual mod import', 'Enable/disable one at a time', 'Offline story launch']
+            perks: ['Manual mod import', '1 profile · 3 mods', 'Offline story launch']
           },
           {
             tier: 'pro' as const,
             title: 'Pro',
-            perks: ['One-click auto-install', 'Batch enable/disable', 'Priority support']
+            perks: ['One-click auto-install', 'Unlimited profiles', 'Mod stacking', 'Priority support']
           },
           {
             tier: 'elite' as const,
@@ -205,8 +177,8 @@ export default function AccountPage(): React.JSX.Element {
             {tier !== plan.tier && plan.tier !== 'free' && (
               <button
                 type="button"
-                disabled={upgrading !== null}
-                onClick={() => void handleUpgrade(plan.tier)}
+                disabled={awaitingPayment}
+                onClick={() => handleUpgrade(plan.tier)}
                 className="mt-3 text-[10px] font-bold uppercase tracking-wider text-launcher-accent hover:underline disabled:opacity-50"
               >
                 Upgrade to {plan.title}

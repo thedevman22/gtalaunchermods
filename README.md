@@ -1,4 +1,4 @@
-# GTA Mod Launcher
+# ModHarbor
 
 Desktop mod launcher for GTA V (Electron) plus a marketing site (Next.js).
 
@@ -31,4 +31,4 @@ cd landing && npm install && npm run dev
 npm run build:win
 ```
 
-Output: `release/GTA Mod Launcher-{version}-setup.exe`
+Output: `release/ModHarbor-{version}-setup.exe` (executable: `ModHarbor.exe`)

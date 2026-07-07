@@ -59,11 +59,28 @@ export function AuthProvider({ children }: { children: ReactNode }): React.JSX.E
     return nextProfile
   }, [session?.user])
 
+  useEffect(() => {
+    const tier = profile?.subscription_tier ?? 'free'
+    void window.api.app.setSubscriptionTier(tier)
+  }, [profile?.subscription_tier])
+
+  useEffect(() => {
+    if (isOfflineDevMode) {
+      void window.api.app.setSubscriptionTier(OFFLINE_DEV_PROFILE.subscription_tier)
+    }
+  }, [])
+
   const waitForTierUpgrade = useCallback(
     async (targetTier: SubscriptionTier): Promise<boolean> => {
-      return pollForTierUpgrade(() => refreshProfile(), targetTier)
+      const currentTier = profile?.subscription_tier ?? 'free'
+      const upgraded = await pollForTierUpgrade(refreshProfile, currentTier, {
+        intervalMs: 10_000
+      })
+      if (!upgraded) return false
+      if (upgraded === targetTier) return true
+      return targetTier === 'pro' && upgraded === 'elite'
     },
-    [refreshProfile]
+    [refreshProfile, profile?.subscription_tier]
   )
 
   useEffect(() => {

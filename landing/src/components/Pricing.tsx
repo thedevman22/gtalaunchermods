@@ -1,5 +1,6 @@
 import { COMPARISON_ROWS, PRICING_TIERS, SITE } from '@/lib/constants'
 import ScrollReveal from '@/components/ScrollReveal'
+import WaveDivider from '@/components/WaveDivider'
 
 function Check({ on }: { on: boolean }): React.JSX.Element {
   return on ? (
@@ -15,11 +16,11 @@ function Check({ on }: { on: boolean }): React.JSX.Element {
 
 export default function Pricing(): React.JSX.Element {
   return (
-    <section id="pricing" className="border-t border-border/60 px-4 py-20 sm:px-6 lg:py-28">
+    <section id="pricing" className="relative bg-surface/50 px-4 py-20 sm:px-6 lg:py-28">
       <div className="mx-auto max-w-6xl">
         <ScrollReveal className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.25em] text-accent">Pricing</p>
-          <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+          <h2 className="mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl">
             Launcher tiers, not mod paywalls
           </h2>
           <p className="mt-4 text-muted">
@@ -34,18 +35,18 @@ export default function Pricing(): React.JSX.Element {
               className={[
                 'relative flex flex-col rounded-2xl border p-6 lg:p-8',
                 tier.highlight
-                  ? 'border-accent/50 bg-accent/5 shadow-[0_0_40px_rgba(0,230,118,0.1)]'
-                  : 'border-border bg-surface/40'
+                  ? 'border-accent/50 bg-white shadow-[0_4px_30px_rgba(43,159,212,0.12)]'
+                  : 'border-border bg-surface/80'
               ].join(' ')}
             >
               {tier.highlight && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-accent px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-bg">
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-accent px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
                   Most popular
                 </span>
               )}
               <h3
                 className={[
-                  'text-lg font-bold',
+                  'font-display text-lg font-bold',
                   tier.id === 'pro' && 'text-pro',
                   tier.id === 'elite' && 'text-elite'
                 ].join(' ')}
@@ -53,7 +54,7 @@ export default function Pricing(): React.JSX.Element {
                 {tier.name}
               </h3>
               <div className="mt-3 flex items-baseline gap-1">
-                <span className="text-4xl font-bold">{tier.price}</span>
+                <span className="font-display text-4xl font-bold">{tier.price}</span>
                 <span className="text-sm text-muted">{tier.period}</span>
               </div>
               <p className="mt-3 text-sm text-muted">{tier.description}</p>
@@ -68,11 +69,15 @@ export default function Pricing(): React.JSX.Element {
               </ul>
 
               <a
-                href={tier.id === 'free' ? SITE.downloadUrl : '#'}
+                href={
+                  tier.id === 'free'
+                    ? SITE.downloadUrl
+                    : `/pricing${tier.id === 'pro' ? '?tier=pro' : tier.id === 'elite' ? '?tier=elite' : ''}`
+                }
                 className={[
                   'mt-8 block rounded-xl py-3 text-center text-xs font-bold uppercase tracking-wider transition-all',
                   tier.highlight
-                    ? 'bg-gradient-to-r from-accent to-accent-dim text-bg shadow-[0_0_20px_rgba(0,230,118,0.25)] hover:scale-[1.02]'
+                    ? 'wave-button bg-gradient-to-r from-accent to-accent-dim text-white shadow-[0_4px_20px_rgba(43,159,212,0.25)] hover:scale-[1.02]'
                     : 'border border-border bg-elevated text-text hover:border-accent/40'
                 ].join(' ')}
               >
@@ -82,7 +87,7 @@ export default function Pricing(): React.JSX.Element {
           ))}
         </ScrollReveal>
 
-        <ScrollReveal delay={0.1} className="mt-16 overflow-hidden rounded-2xl border border-border">
+        <ScrollReveal delay={0.1} className="mt-16 overflow-hidden rounded-2xl border border-border bg-surface">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[560px] text-left text-sm">
               <thead>
@@ -113,6 +118,7 @@ export default function Pricing(): React.JSX.Element {
           </div>
         </ScrollReveal>
       </div>
+      <WaveDivider variant="subtle" className="absolute bottom-0 left-0 right-0" />
     </section>
   )
 }

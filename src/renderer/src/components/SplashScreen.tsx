@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { SPLASH_TIPS } from '@renderer/data/splashTips'
+import ModHarborLogo from '@renderer/components/ModHarborLogo'
+import WaveDivider from '@renderer/components/WaveDivider'
 
 interface SplashScreenProps {
   progress: number
@@ -35,22 +37,22 @@ export default function SplashScreen({
       ].join(' ')}
     >
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute left-1/2 top-1/3 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full bg-launcher-accent/10 blur-3xl" />
-        <div className="absolute bottom-0 right-0 h-64 w-64 rounded-full bg-launcher-accent/5 blur-3xl" />
+        <div className="absolute left-1/2 top-1/3 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full bg-sky-200/40 blur-3xl" />
+        <div className="absolute bottom-0 right-0 h-64 w-64 rounded-full bg-cyan-100/50 blur-3xl" />
       </div>
 
       <div className="relative flex flex-col items-center px-8">
         <div
           className={[
-            'splash-logo-enter flex h-28 w-28 items-center justify-center rounded-3xl bg-gradient-to-br from-launcher-accent to-launcher-accent-dim shadow-[0_0_60px_var(--color-launcher-glow)]',
+            'splash-logo-enter shadow-[0_8px_40px_rgba(43,159,212,0.3)]',
             exiting ? 'scale-100 opacity-100' : ''
           ].join(' ')}
         >
-          <span className="font-display text-5xl font-black tracking-tight text-launcher-bg">G</span>
+          <ModHarborLogo size={112} className="rounded-3xl" />
         </div>
 
         <h1 className="splash-title-enter mt-8 font-display text-3xl font-bold tracking-wide text-launcher-text">
-          GTA MOD LAUNCHER
+          ModHarbor
         </h1>
         <p className="splash-title-enter mt-2 text-xs font-semibold uppercase tracking-[0.35em] text-launcher-accent">
           Story mode · Offline · Safe
@@ -78,6 +80,8 @@ export default function SplashScreen({
           {SPLASH_TIPS[tipIndex]}
         </p>
       </div>
+
+      <WaveDivider variant="accent" className="absolute bottom-0 left-0 right-0" />
     </div>
   )
 }

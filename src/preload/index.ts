@@ -10,11 +10,15 @@ import type { CatalogResult } from '../shared/catalog'
 import type { ModImportResult, ModListResult } from '../shared/mods'
 import type { OAuthCallbackInfo } from '../shared/profile'
 import type { SetupStatus } from '../shared/dependencies'
+import type { OnboardingState } from '../shared/onboarding'
+import type { ModProfileLimits, ModProfileManifest, ModProfileSummary } from '../shared/modProfiles'
+import type { SubscriptionTier } from '../shared/profile'
 import type { UpdateStatusPayload } from '../shared/update'
 
 const gameApi = {
   getPath: (): Promise<GamePathInfo> => ipcRenderer.invoke('game:getPath'),
-  detectPaths: (): Promise<GamePathCandidate[]> => ipcRenderer.invoke('game:detectPaths'),
+  detectPaths: (edition?: string): Promise<GamePathCandidate[]> =>
+    ipcRenderer.invoke('game:detectPaths', edition),
   setPath: (exePath: string): Promise<OperationResult> => ipcRenderer.invoke('game:setPath', exePath),
   browsePath: (): Promise<OperationResult> => ipcRenderer.invoke('game:browsePath'),
   launch: (): Promise<OperationResult> => ipcRenderer.invoke('game:launch'),
@@ -93,7 +97,75 @@ const catalogApi = {
   install: (catalogId: string, gameId: string): Promise<ModImportResult> =>
     ipcRenderer.invoke('catalog:install', catalogId, gameId),
   getInstalledMap: (gameId: string): Promise<Record<string, string>> =>
-    ipcRenderer.invoke('catalog:getInstalledMap', gameId)
+    ipcRenderer.invoke('catalog:getInstalledMap', gameId),
+  onChanged: (callback: () => void): (() => void) => {
+    const listener = (): void => {
+      callback()
+    }
+    ipcRenderer.on('catalog:changed', listener)
+    return () => {
+      ipcRenderer.removeListener('catalog:changed', listener)
+    }
+  }
+}
+
+const onboardingApi = {
+  getState: (): Promise<OnboardingState> => ipcRenderer.invoke('onboarding:getState'),
+  setGameSetup: (gameId: string, edition: string): Promise<OperationResult> =>
+    ipcRenderer.invoke('onboarding:setGameSetup', gameId, edition),
+  complete: (): Promise<OperationResult> => ipcRenderer.invoke('onboarding:complete'),
+  reset: (): Promise<OperationResult> => ipcRenderer.invoke('onboarding:reset'),
+  onChanged: (callback: (payload: OnboardingState) => void): (() => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, payload: OnboardingState): void => {
+      callback(payload)
+    }
+    ipcRenderer.on('onboarding:changed', listener)
+    return () => {
+      ipcRenderer.removeListener('onboarding:changed', listener)
+    }
+  }
+}
+
+const profilesApi = {
+  list: (): Promise<ModProfileSummary[]> => ipcRenderer.invoke('profiles:list'),
+  getLimits: (): Promise<ModProfileLimits> => ipcRenderer.invoke('profiles:getLimits'),
+  get: (profileId: string): Promise<ModProfileManifest | null> =>
+    ipcRenderer.invoke('profiles:get', profileId),
+  create: (name: string): Promise<{ success: boolean; error?: string; profile?: ModProfileSummary }> =>
+    ipcRenderer.invoke('profiles:create', name),
+  delete: (profileId: string): Promise<OperationResult> =>
+    ipcRenderer.invoke('profiles:delete', profileId),
+  rename: (profileId: string, name: string): Promise<OperationResult> =>
+    ipcRenderer.invoke('profiles:rename', profileId, name),
+  addMod: (profileId: string, modId: string): Promise<OperationResult> =>
+    ipcRenderer.invoke('profiles:addMod', profileId, modId),
+  removeMod: (profileId: string, modId: string): Promise<OperationResult> =>
+    ipcRenderer.invoke('profiles:removeMod', profileId, modId),
+  apply: (profileId: string): Promise<OperationResult> =>
+    ipcRenderer.invoke('profiles:apply', profileId),
+  launch: (profileId: string): Promise<OperationResult> =>
+    ipcRenderer.invoke('profiles:launch', profileId),
+  importZip: (profileId: string, zipPath: string): Promise<ModImportResult> =>
+    ipcRenderer.invoke('profiles:importZip', profileId, zipPath),
+  browseImport: (profileId: string): Promise<ModImportResult> =>
+    ipcRenderer.invoke('profiles:browseImport', profileId),
+  installCatalog: (catalogId: string, profileId: string, gameId?: string): Promise<ModImportResult> =>
+    ipcRenderer.invoke('profiles:installCatalog', catalogId, profileId, gameId),
+  getActiveId: (): Promise<string> => ipcRenderer.invoke('profiles:getActiveId'),
+  onChanged: (callback: (profiles: ModProfileSummary[]) => void): (() => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, payload: ModProfileSummary[]): void => {
+      callback(payload)
+    }
+    ipcRenderer.on('profiles:changed', listener)
+    return () => {
+      ipcRenderer.removeListener('profiles:changed', listener)
+    }
+  }
+}
+
+const appApi = {
+  setSubscriptionTier: (tier: SubscriptionTier): Promise<OperationResult> =>
+    ipcRenderer.invoke('app:setSubscriptionTier', tier)
 }
 
 const updateApi = {
@@ -118,6 +190,9 @@ const api = {
   catalog: catalogApi,
   auth: authApi,
   setup: setupApi,
+  onboarding: onboardingApi,
+  profiles: profilesApi,
+  app: appApi,
   update: updateApi
 }
 

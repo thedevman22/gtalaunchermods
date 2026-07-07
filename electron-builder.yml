@@ -1,39 +1,40 @@
-appId: com.gtamodlauncher.app
-productName: GTA Mod Launcher
-copyright: Copyright © 2026 GTA Mod Launcher
+appId: com.modharbor.app
+productName: ModHarbor
+copyright: Copyright © 2026 ModHarbor
 
 directories:
   output: release
   buildResources: build
 
+# Packaged app contents: compiled output + bundled resources (catalog, dependencies DLLs, icons).
+# resources/** is unpacked from asar so native DLLs and JSON can be read at runtime.
 files:
+  - out/**/*
+  - resources/**/*
+  - package.json
   - '!**/.vscode/*'
-  - '!src/*'
+  - '!src/**'
   - '!electron.vite.config.{js,ts,mjs,cjs}'
   - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
   - '!landing/**'
   - '!server/**'
+  - '!scripts/**'
+  - '!**/.DS_Store'
 
+asar: true
 asarUnpack:
-  - 'resources/**'
+  - resources/**
 
 win:
   target:
     - target: nsis
       arch:
         - x64
-  executableName: gta-mod-launcher
+  executableName: ModHarbor
   icon: build/icon.ico
-  # Authenticode signing — provide certificate via environment variables at build time:
-  #   CSC_LINK          path to .pfx or base64-encoded certificate
-  #   CSC_KEY_PASSWORD  certificate password
-  # Optional Windows-specific overrides: WIN_CSC_LINK, WIN_CSC_KEY_PASSWORD
   signAndEditExecutable: false
-  signtoolOptions:
-    signingHashAlgorithms:
-      - sha256
 
 nsis:
   oneClick: false
@@ -43,7 +44,7 @@ nsis:
   installerIcon: build/icon.ico
   uninstallerIcon: build/icon.ico
   installerHeaderIcon: build/icon.ico
-  artifactName: ${productName}-${version}-setup.${ext}
+  artifactName: ModHarbor-${version}-setup.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
@@ -67,7 +68,7 @@ linux:
   target:
     - AppImage
     - deb
-  maintainer: gta-mod-launcher
+  maintainer: modharbor
   category: Game
   icon: build/icon.png
 

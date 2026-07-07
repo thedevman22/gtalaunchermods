@@ -7,6 +7,8 @@ import MissingModsDialog from '@renderer/components/MissingModsDialog'
 import MotionButton from '@renderer/components/MotionButton'
 import SetupChecklist from '@renderer/components/SetupChecklist'
 import { useModSync } from '@renderer/context/ModSyncContext'
+import { useProfiles } from '@renderer/context/ProfileContext'
+import { useAuth } from '@renderer/context/AuthContext'
 import { staggerContainer } from '@renderer/lib/motion'
 import type { CatalogMod, ModCategory } from '../../../shared/catalog'
 import { DEFAULT_GAME_ID, getGameDefinition } from '../../../shared/games'
@@ -22,6 +24,8 @@ interface ModsPageProps {
 export default function ModsPage({ onNavigateSettings }: ModsPageProps): React.JSX.Element {
   const activeGameId = DEFAULT_GAME_ID
   const game = getGameDefinition(activeGameId)
+  const { isPremium } = useAuth()
+  const { profiles, selectedProfileId, selectedProfile, refreshProfiles } = useProfiles()
   const {
     missingMods,
     reconciling,
@@ -44,6 +48,12 @@ export default function ModsPage({ onNavigateSettings }: ModsPageProps): React.J
   const [importing, setImporting] = useState(false)
   const [syncBusy, setSyncBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [profileModIds, setProfileModIds] = useState<Set<string>>(new Set())
+
+  const loadProfileMods = useCallback(async (profileId: string): Promise<void> => {
+    const profile = await window.api.profiles.get(profileId)
+    setProfileModIds(new Set(profile?.modIds ?? []))
+  }, [])
 
   const loadSetup = useCallback(async (): Promise<void> => {
     setSetupStatus(await window.api.setup.getStatus())
@@ -66,9 +76,19 @@ export default function ModsPage({ onNavigateSettings }: ModsPageProps): React.J
   }, [loadSetup])
 
   useEffect(() => {
+    if (!selectedProfileId) {
+      setProfileModIds(new Set())
+      return
+    }
+    void loadProfileMods(selectedProfileId)
+  }, [selectedProfileId, profiles, loadProfileMods])
+
+  const profileMode = Boolean(selectedProfileId)
+
+  useEffect(() => {
     if (!setupStatus?.modsAllowed) return
     void loadCatalog()
-    return window.api.mods.onChanged((payload) => {
+    const unsubMods = window.api.mods.onChanged((payload) => {
       setInstalledMods(
         payload.mods.filter(
           (mod) => mod.gameId === activeGameId || (!mod.gameId && activeGameId === DEFAULT_GAME_ID)
@@ -76,6 +96,13 @@ export default function ModsPage({ onNavigateSettings }: ModsPageProps): React.J
       )
       void window.api.catalog.getInstalledMap(activeGameId).then(setInstalledMap)
     })
+    const unsubCatalog = window.api.catalog.onChanged(() => {
+      void loadCatalog()
+    })
+    return () => {
+      unsubMods()
+      unsubCatalog()
+    }
   }, [activeGameId, loadCatalog, setupStatus?.modsAllowed])
 
   const modById = useMemo(() => {
@@ -100,38 +127,69 @@ export default function ModsPage({ onNavigateSettings }: ModsPageProps): React.J
   }, [activeCategory, catalogMods, searchQuery])
 
   const handleCatalogInstall = async (catalogId: string): Promise<void> => {
+    if (!selectedProfileId) {
+      setError('Create a mod profile on Home first.')
+      return
+    }
+
     setBusyCatalogId(catalogId)
     setError(null)
     try {
-      const result = await window.api.catalog.install(catalogId, activeGameId)
+      const catalogMod = catalogMods.find((mod) => mod.id === catalogId)
+      if (catalogMod?.source === 'external_link') {
+        const result = await window.api.catalog.install(catalogId, activeGameId)
+        if (!result.success) {
+          setError(result.error ?? 'Install failed.')
+        }
+        return
+      }
+
+      if (!isPremium) {
+        setError('One-click catalog install requires Pro. Import mods via drag-and-drop on Home.')
+        return
+      }
+
+      const result = await window.api.profiles.installCatalog(catalogId, selectedProfileId, activeGameId)
       if (!result.success) {
         setError(result.error ?? 'Install failed.')
         return
       }
+
       if (result.mod?.catalogId) {
-        await syncModInstalled(result.mod.catalogId, result.mod.enabled)
+        await syncModInstalled(result.mod.catalogId, false)
       }
       await loadCatalog()
+      await refreshProfiles()
+      if (selectedProfileId) {
+        await loadProfileMods(selectedProfileId)
+      }
     } finally {
       setBusyCatalogId(null)
     }
   }
 
   const handleToggle = async (modId: string, enabled: boolean): Promise<void> => {
+    if (!selectedProfileId) {
+      setError('Create a mod profile on Home first.')
+      return
+    }
+
     setBusyModId(modId)
     setError(null)
     try {
       const mod = modById.get(modId)
       const result = enabled
-        ? await window.api.mods.enableMod(modId)
-        : await window.api.mods.disableMod(modId)
+        ? await window.api.profiles.addMod(selectedProfileId, modId)
+        : await window.api.profiles.removeMod(selectedProfileId, modId)
       if (!result.success) {
-        setError(result.error ?? 'Failed to update mod.')
+        setError(result.error ?? 'Failed to update profile.')
         return
       }
       if (mod?.catalogId) {
         await syncModEnabled(mod.catalogId, enabled)
       }
+      await refreshProfiles()
+      await loadProfileMods(selectedProfileId)
       await loadCatalog()
     } finally {
       setBusyModId(null)
@@ -154,6 +212,10 @@ export default function ModsPage({ onNavigateSettings }: ModsPageProps): React.J
       if (mod.catalogId) {
         await syncModRemoved(mod.catalogId)
       }
+      await refreshProfiles()
+      if (selectedProfileId) {
+        await loadProfileMods(selectedProfileId)
+      }
       await loadCatalog()
     } finally {
       setBusyModId(null)
@@ -164,9 +226,16 @@ export default function ModsPage({ onNavigateSettings }: ModsPageProps): React.J
     setImporting(true)
     setError(null)
     try {
-      const result = await window.api.mods.browseImport()
-      if (!result.success && result.error && result.error !== 'Import canceled.') {
-        setError(result.error)
+      if (selectedProfileId) {
+        const result = await window.api.profiles.browseImport(selectedProfileId)
+        if (!result.success && result.error && result.error !== 'Import canceled.') {
+          setError(result.error)
+        }
+      } else {
+        const result = await window.api.mods.browseImport()
+        if (!result.success && result.error && result.error !== 'Import canceled.') {
+          setError(result.error)
+        }
       }
       await loadCatalog()
     } finally {
@@ -224,6 +293,12 @@ export default function ModsPage({ onNavigateSettings }: ModsPageProps): React.J
             </h2>
             <p className="mt-1 text-sm text-launcher-muted">
               {game?.catalogSubtitle ?? 'Browse mods or manage your installed library.'}
+              {selectedProfile ? (
+                <>
+                  {' '}
+                  · Adding to profile <span className="text-launcher-accent">{selectedProfile.name}</span>
+                </>
+              ) : null}
             </p>
           </div>
 
@@ -298,6 +373,9 @@ export default function ModsPage({ onNavigateSettings }: ModsPageProps): React.J
                         enabled={libraryMod?.enabled ?? false}
                         busy={busyCatalogId === mod.id || busyModId === libraryModId}
                         libraryModId={libraryModId}
+                        installLocked={!isPremium && mod.source !== 'external_link'}
+                        profileMode={profileMode}
+                        inProfile={libraryModId ? profileModIds.has(libraryModId) : false}
                         onInstall={(catalogId) => void handleCatalogInstall(catalogId)}
                         onToggleMod={(modId, enabled) => void handleToggle(modId, enabled)}
                       />
@@ -348,6 +426,8 @@ export default function ModsPage({ onNavigateSettings }: ModsPageProps): React.J
                   key={mod.id}
                   mod={mod}
                   busy={busyModId === mod.id || importing}
+                  profileMode={profileMode}
+                  inProfile={profileModIds.has(mod.id)}
                   onToggleMod={(modId, enabled) => void handleToggle(modId, enabled)}
                   onDelete={(modId) => void handleDelete(modId)}
                 />

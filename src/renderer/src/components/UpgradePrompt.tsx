@@ -1,5 +1,6 @@
 import type { SubscriptionTier } from '../../../shared/profile'
 import { tierBadgeLabel } from '../../../shared/profile'
+import { useUpgradeFlow } from '@renderer/context/UpgradeFlowContext'
 
 interface UpgradePromptProps {
   feature: string
@@ -14,6 +15,9 @@ export default function UpgradePrompt({
   onUpgrade,
   compact = false
 }: UpgradePromptProps): React.JSX.Element {
+  const { startUpgrade } = useUpgradeFlow()
+  const handleUpgrade = onUpgrade ?? (() => startUpgrade(requiredTier === 'elite' ? 'elite' : 'pro'))
+
   return (
     <div
       className={[
@@ -32,15 +36,13 @@ export default function UpgradePrompt({
           Requires {tierBadgeLabel(requiredTier)} or higher
         </p>
       </div>
-      {onUpgrade && (
-        <button
-          type="button"
-          onClick={onUpgrade}
-          className="shrink-0 rounded-lg border border-amber-400/40 bg-amber-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-200 transition-colors hover:bg-amber-500/20"
-        >
-          Upgrade
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={handleUpgrade}
+        className="shrink-0 rounded-lg border border-amber-400/40 bg-amber-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-200 transition-colors hover:bg-amber-500/20"
+      >
+        Upgrade
+      </button>
     </div>
   )
 }

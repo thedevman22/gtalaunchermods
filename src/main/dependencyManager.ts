@@ -4,7 +4,7 @@ import { app, BrowserWindow, dialog, ipcMain } from 'electron'
 import type { OperationResult } from '../shared/game'
 import type { DependencyId, DependencyStatus, SetupStatus } from '../shared/dependencies'
 import { REQUIRED_DEPENDENCIES } from '../shared/dependencies'
-import { getResolvedGamePath, validateGamePath } from './gameLauncher'
+import { getResolvedGamePath, isOnboardingComplete, validateGamePath } from './gameLauncher'
 
 function getBundledDependenciesDir(): string {
   if (app.isPackaged) {
@@ -156,6 +156,10 @@ export function emitSetupChanged(): void {
 }
 
 export async function promptMissingDependenciesInstall(window: BrowserWindow): Promise<void> {
+  if (!isOnboardingComplete()) {
+    return
+  }
+
   const status = getSetupStatus()
   if (status.setupComplete) {
     return

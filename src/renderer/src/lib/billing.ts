@@ -1,9 +1,20 @@
-import type { SubscriptionTier } from '../../../shared/profile'
+import type { RealtimeChannel } from '@supabase/supabase-js'
+import type { SubscriptionTier, UserProfile } from '../../../shared/profile'
+import { supabase } from '@renderer/lib/supabase'
 
 const BILLING_API_URL = import.meta.env.VITE_BILLING_API_URL ?? 'http://localhost:4242'
+const WEBSITE_URL = import.meta.env.VITE_MODHARBOR_WEBSITE_URL ?? 'http://localhost:3000'
+
+export { WEBSITE_URL }
 
 export interface CheckoutSessionResponse {
   url: string
+}
+
+const TIER_RANK: Record<SubscriptionTier, number> = {
+  free: 0,
+  pro: 1,
+  elite: 2
 }
 
 export async function createCheckoutSession(
@@ -33,24 +44,89 @@ export async function createCheckoutSession(
 }
 
 export async function waitForTierUpgrade(
-  refreshProfile: () => Promise<{ subscription_tier: SubscriptionTier } | null>,
-  targetTier: SubscriptionTier,
+  refreshProfile: () => Promise<UserProfile | null>,
+  previousTier: SubscriptionTier,
   options?: { intervalMs?: number; timeoutMs?: number }
-): Promise<boolean> {
-  const intervalMs = options?.intervalMs ?? 2000
-  const timeoutMs = options?.timeoutMs ?? 120_000
+): Promise<SubscriptionTier | null> {
+  const intervalMs = options?.intervalMs ?? 10_000
+  const timeoutMs = options?.timeoutMs ?? 600_000
   const deadline = Date.now() + timeoutMs
 
   while (Date.now() < deadline) {
     const profile = await refreshProfile()
-    if (profile && profile.subscription_tier === targetTier) {
-      return true
-    }
-    if (profile && targetTier === 'pro' && profile.subscription_tier === 'elite') {
-      return true
+    if (profile && TIER_RANK[profile.subscription_tier] > TIER_RANK[previousTier]) {
+      return profile.subscription_tier
     }
     await new Promise((resolve) => setTimeout(resolve, intervalMs))
   }
 
-  return false
+  return null
+}
+
+export interface TierUpgradeWatcher {
+  stop: () => void
+}
+
+export function watchForTierUpgrade(
+  userId: string,
+  previousTier: SubscriptionTier,
+  onUpgrade: (newTier: SubscriptionTier) => void,
+  refreshProfile: () => Promise<UserProfile | null>,
+  options?: { pollIntervalMs?: number }
+): TierUpgradeWatcher {
+  const pollIntervalMs = options?.pollIntervalMs ?? 10_000
+  let stopped = false
+  let channel: RealtimeChannel | null = null
+
+  const checkTier = (tier: SubscriptionTier): void => {
+    if (stopped) return
+    if (TIER_RANK[tier] > TIER_RANK[previousTier]) {
+      onUpgrade(tier)
+      stop()
+    }
+  }
+
+  if (supabase) {
+    channel = supabase
+      .channel(`profile-tier-${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${userId}`
+        },
+        (payload) => {
+          const nextTier = (payload.new as { subscription_tier?: SubscriptionTier }).subscription_tier
+          if (nextTier) {
+            checkTier(nextTier)
+          }
+        }
+      )
+      .subscribe()
+  }
+
+  const poll = async (): Promise<void> => {
+    while (!stopped) {
+      await new Promise((resolve) => setTimeout(resolve, pollIntervalMs))
+      if (stopped) break
+      const profile = await refreshProfile()
+      if (profile) {
+        checkTier(profile.subscription_tier)
+      }
+    }
+  }
+
+  void poll()
+
+  const stop = (): void => {
+    stopped = true
+    if (channel) {
+      void supabase?.removeChannel(channel)
+      channel = null
+    }
+  }
+
+  return { stop }
 }

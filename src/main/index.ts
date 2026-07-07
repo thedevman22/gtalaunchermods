@@ -5,9 +5,11 @@ import icon from '../../resources/icon.png?asset'
 import { registerGameLauncherIpc } from './gameLauncher'
 import { registerModManagerIpc } from './modManager'
 import { registerAuthBridgeIpc } from './authBridge'
-import { registerCatalogIpc } from './catalogManager'
+import { registerCatalogIpc, registerCatalogWatcher } from './catalogManager'
 import { registerDependencyManagerIpc } from './dependencyManager'
 import { registerUpdateIpc, startAutoUpdater } from './autoUpdater'
+import { registerOnboardingIpc } from './onboardingManager'
+import { registerModProfileIpc } from './modProfileManager'
 
 function createWindow(): BrowserWindow {
   const window = new BrowserWindow({
@@ -17,7 +19,7 @@ function createWindow(): BrowserWindow {
     minHeight: 600,
     show: false,
     autoHideMenuBar: true,
-    backgroundColor: '#0a0a0f',
+    backgroundColor: '#f4f9fd',
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
@@ -53,12 +55,15 @@ function createWindow(): BrowserWindow {
 }
 
 app.whenReady().then(() => {
-  electronApp.setAppUserModelId('com.gtamodlauncher.app')
+  electronApp.setAppUserModelId('com.modharbor.app')
   registerGameLauncherIpc()
   registerModManagerIpc()
   registerCatalogIpc()
+  registerCatalogWatcher()
   registerAuthBridgeIpc()
   registerDependencyManagerIpc()
+  registerOnboardingIpc()
+  registerModProfileIpc()
   registerUpdateIpc()
 
   app.on('browser-window-created', (_, window) => {

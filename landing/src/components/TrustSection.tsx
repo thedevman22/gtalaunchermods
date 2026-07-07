@@ -1,33 +1,44 @@
 import ScrollReveal from '@/components/ScrollReveal'
+import WaveDivider from '@/components/WaveDivider'
+import { SITE } from '@/lib/constants'
 
 export default function TrustSection(): React.JSX.Element {
   return (
-    <section id="trust" className="border-t border-border/60 px-4 py-20 sm:px-6 lg:py-28">
+    <section id="trust" className="relative px-4 py-20 sm:px-6 lg:py-28">
       <div className="mx-auto max-w-6xl">
         <ScrollReveal>
-          <div className="relative overflow-hidden rounded-3xl border border-accent/20 bg-gradient-to-br from-accent/5 via-surface/80 to-surface/40 p-8 sm:p-12 lg:p-16">
+          <div className="relative overflow-hidden rounded-3xl border border-accent/20 bg-gradient-to-br from-white via-accent/5 to-sky-50/50 p-8 sm:p-12 lg:p-16">
             <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-accent/10 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-sky-200/30 blur-3xl" />
 
             <div className="relative grid gap-10 lg:grid-cols-2 lg:items-center">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.25em] text-accent">
                   Our promise
                 </p>
-                <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+                <h2 className="mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl">
                   Mods are free, always.
                 </h2>
                 <p className="mt-4 text-lg leading-relaxed text-muted">
                   We will never charge for mods, lock downloads behind a subscription, or take a cut
-                  from mod creators. {`GTA Mod Launcher's`} paid tiers only unlock launcher
-                  convenience — never the mods themselves.
+                  from mod creators. {SITE.name}&apos;s paid tiers only unlock launcher convenience
+                  — never the mods themselves.
                 </p>
+
+                <div className="mt-6 rounded-xl border border-accent/25 bg-accent/10 px-4 py-3">
+                  <p className="text-sm font-bold text-text">Story-mode safety is non-negotiable</p>
+                  <p className="mt-1 text-sm text-muted">
+                    ModHarbor will not add online modding features. Offline single-player is the
+                    product — not a setting you have to hunt for.
+                  </p>
+                </div>
               </div>
 
               <div className="space-y-4">
                 {[
                   {
                     title: 'No mod paywalls',
-                    body: 'Import and manage unlimited mods on the free tier. We don\'t host or sell mod content.'
+                    body: "Import and manage mods on the free tier. We don't host or sell mod content."
                   },
                   {
                     title: 'Story mode only',
@@ -40,9 +51,9 @@ export default function TrustSection(): React.JSX.Element {
                 ].map((item) => (
                   <div
                     key={item.title}
-                    className="rounded-xl border border-border/60 bg-bg/40 p-5 backdrop-blur-sm"
+                    className="rounded-xl border border-border/60 bg-white/70 p-5 shadow-sm backdrop-blur-sm"
                   >
-                    <h3 className="flex items-center gap-2 font-semibold">
+                    <h3 className="flex items-center gap-2 font-display font-semibold">
                       <span className="text-accent">✦</span>
                       {item.title}
                     </h3>
@@ -54,6 +65,7 @@ export default function TrustSection(): React.JSX.Element {
           </div>
         </ScrollReveal>
       </div>
+      <WaveDivider variant="accent" className="absolute bottom-0 left-0 right-0" />
     </section>
   )
 }

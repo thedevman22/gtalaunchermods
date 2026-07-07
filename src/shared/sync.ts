@@ -1,3 +1,5 @@
+import type { GameEdition, GameId } from './games'
+
 export interface UserModRecord {
   user_id: string
   mod_id: string
@@ -11,6 +13,8 @@ export interface UserPreferences {
   sync_preferences_enabled: boolean
   theme_preference: ThemePreference
   default_install_path: string | null
+  game_id: GameId | null
+  game_edition: GameEdition | null
 }
 
 export interface MissingCloudMod {

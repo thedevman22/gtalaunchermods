@@ -5,6 +5,7 @@ export type GamePathSource = 'steam' | 'epic' | 'rockstar' | 'saved' | 'manual'
 export interface GamePathCandidate {
   path: string
   source: GamePathSource
+  label?: string
 }
 
 export interface LaunchStatusPayload {

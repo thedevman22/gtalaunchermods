@@ -36,8 +36,8 @@ export function registerAuthBridgeIpc(): void {
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
         res.end(`<!DOCTYPE html>
 <html>
-  <head><title>GTA Mod Launcher</title></head>
-  <body style="font-family:system-ui;background:#0a0a0f;color:#e8e8f0;display:flex;align-items:center;justify-content:center;height:100vh;margin:0">
+  <head><title>ModHarbor</title></head>
+  <body style="font-family:system-ui;background:#f4f9fd;color:#0f2942;display:flex;align-items:center;justify-content:center;height:100vh;margin:0">
     <div style="text-align:center">
       <h1>Sign-in complete</h1>
       <p>You can close this window and return to the launcher.</p>

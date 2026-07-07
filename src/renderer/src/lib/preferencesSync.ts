@@ -1,5 +1,6 @@
 import type { ThemePreference } from '../../../shared/profile'
 import type { UserPreferences } from '../../../shared/sync'
+import { isGameEdition, isGameId } from '../../../shared/games'
 import { supabase } from './supabase'
 
 export function applyThemePreference(theme: ThemePreference): void {
@@ -22,9 +23,21 @@ export async function updateProfilePreferences(
 }
 
 export async function applySyncedPreferences(
-  preferences: Pick<UserPreferences, 'theme_preference' | 'default_install_path'>
+  preferences: Pick<
+    UserPreferences,
+    'theme_preference' | 'default_install_path' | 'game_id' | 'game_edition'
+  >
 ): Promise<void> {
   applyThemePreference(preferences.theme_preference)
+
+  if (
+    preferences.game_id &&
+    preferences.game_edition &&
+    isGameId(preferences.game_id) &&
+    isGameEdition(preferences.game_edition)
+  ) {
+    await window.api.onboarding.setGameSetup(preferences.game_id, preferences.game_edition)
+  }
 
   if (preferences.default_install_path) {
     const result = await window.api.game.setPath(preferences.default_install_path)

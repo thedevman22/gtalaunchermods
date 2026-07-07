@@ -5,6 +5,7 @@ interface ImportMetaEnv {
   readonly VITE_SUPABASE_ANON_KEY: string
   readonly VITE_SUBSCRIPTION_PORTAL_URL?: string
   readonly VITE_BILLING_API_URL?: string
+  readonly VITE_MODHARBOR_WEBSITE_URL?: string
 }
 
 interface ImportMeta {

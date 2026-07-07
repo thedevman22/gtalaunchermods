@@ -9,6 +9,8 @@ interface InstalledModRowProps extends Omit<HTMLMotionProps<'article'>, 'onToggl
   busy: boolean
   onToggleMod: (modId: string, enabled: boolean) => void
   onDelete: (modId: string) => void
+  inProfile?: boolean
+  profileMode?: boolean
 }
 
 export default function InstalledModRow({
@@ -16,8 +18,14 @@ export default function InstalledModRow({
   busy,
   onToggleMod,
   onDelete,
+  inProfile,
+  profileMode = false,
   ...motionProps
 }: InstalledModRowProps): React.JSX.Element {
+  const enabled = profileMode ? Boolean(inProfile) : mod.enabled
+  const onLabel = profileMode ? 'In profile' : 'On'
+  const offLabel = profileMode ? 'Add' : 'Off'
+
   return (
     <motion.article
       variants={staggerItem}
@@ -47,9 +55,9 @@ export default function InstalledModRow({
 
       <div className="flex shrink-0 items-center gap-4">
         <AnimatedToggle
-          enabled={mod.enabled}
+          enabled={enabled}
           disabled={busy}
-          label={mod.enabled ? 'On' : 'Off'}
+          label={enabled ? onLabel : offLabel}
           onChange={(next) => onToggleMod(mod.id, next)}
         />
 

@@ -5,22 +5,26 @@ import type {
   LaunchStatusPayload,
   OperationResult
 } from '../shared/game'
-import type { ModImportResult, ModListResult, ModSummary } from '../shared/mods'
+import type { ModImportResult, ModListResult } from '../shared/mods'
 import type { OAuthCallbackInfo } from '../shared/profile'
 import type { CatalogResult } from '../shared/catalog'
 import type { SetupStatus, DependencyId } from '../shared/dependencies'
 import type { UpdateStatusPayload } from '../shared/update'
+import type { ModProfileLimits, ModProfileManifest, ModProfileSummary } from '../shared/modProfiles'
+import type { GameEdition } from '../shared/games'
 
 export type { LaunchStatus, GamePathSource } from '../shared/game'
 export type { ModSummary, ModListResult, ModImportResult } from '../shared/mods'
 export type { SubscriptionTier, UserProfile, ThemePreference, OAuthCallbackInfo } from '../shared/profile'
 export type { SetupStatus, DependencyId } from '../shared/dependencies'
 export type { UpdateStatus, UpdateStatusPayload } from '../shared/update'
-export type { CatalogMod, ModCategory, ModCatalogSource, CatalogResult } from '../shared/catalog'
+export type { GameEdition, GameId } from '../shared/games'
+export type { ModProfileSummary, ModProfileManifest, ModProfileLimits } from '../shared/modProfiles'
+export type { OnboardingState } from '../shared/onboarding'
 
 export interface GameAPI {
   getPath: () => Promise<GamePathInfo>
-  detectPaths: () => Promise<GamePathCandidate[]>
+  detectPaths: (edition?: GameEdition) => Promise<GamePathCandidate[]>
   setPath: (exePath: string) => Promise<OperationResult>
   browsePath: () => Promise<OperationResult>
   launch: () => Promise<OperationResult>
@@ -57,6 +61,7 @@ export interface CatalogAPI {
   getMods: (gameId: string) => Promise<CatalogResult>
   install: (catalogId: string, gameId: string) => Promise<ModImportResult>
   getInstalledMap: (gameId: string) => Promise<Record<string, string>>
+  onChanged: (callback: () => void) => () => void
 }
 
 export interface UpdateAPI {
@@ -66,6 +71,36 @@ export interface UpdateAPI {
   onStatusChanged: (callback: (payload: UpdateStatusPayload) => void) => () => void
 }
 
+export interface OnboardingAPI {
+  getState: () => Promise<OnboardingState>
+  setGameSetup: (gameId: string, edition: GameEdition) => Promise<OperationResult>
+  complete: () => Promise<OperationResult>
+  reset: () => Promise<OperationResult>
+  onChanged: (callback: (payload: OnboardingState) => void) => () => void
+}
+
+export interface ProfilesAPI {
+  list: () => Promise<ModProfileSummary[]>
+  getLimits: () => Promise<ModProfileLimits>
+  get: (profileId: string) => Promise<ModProfileManifest | null>
+  create: (name: string) => Promise<{ success: boolean; error?: string; profile?: ModProfileSummary }>
+  delete: (profileId: string) => Promise<OperationResult>
+  rename: (profileId: string, name: string) => Promise<OperationResult>
+  addMod: (profileId: string, modId: string) => Promise<OperationResult>
+  removeMod: (profileId: string, modId: string) => Promise<OperationResult>
+  apply: (profileId: string) => Promise<OperationResult>
+  launch: (profileId: string) => Promise<OperationResult>
+  importZip: (profileId: string, zipPath: string) => Promise<ModImportResult>
+  browseImport: (profileId: string) => Promise<ModImportResult>
+  installCatalog: (catalogId: string, profileId: string, gameId?: string) => Promise<ModImportResult>
+  getActiveId: () => Promise<string>
+  onChanged: (callback: (profiles: ModProfileSummary[]) => void) => () => void
+}
+
+export interface AppAPI {
+  setSubscriptionTier: (tier: SubscriptionTier) => Promise<OperationResult>
+}
+
 export interface LauncherAPI {
   platform: NodeJS.Platform
   game: GameAPI
@@ -73,6 +108,9 @@ export interface LauncherAPI {
   catalog: CatalogAPI
   auth: AuthAPI
   setup: SetupAPI
+  onboarding: OnboardingAPI
+  profiles: ProfilesAPI
+  app: AppAPI
   update: UpdateAPI
 }
 

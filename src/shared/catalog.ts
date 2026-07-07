@@ -8,6 +8,8 @@ export type ModCategory =
 
 export type ModCatalogSource = 'hosted' | 'external_link'
 
+export type CatalogModStatus = 'available' | 'coming_soon'
+
 export interface CatalogMod {
   id: string
   game_id: string
@@ -20,6 +22,11 @@ export interface CatalogMod {
   category: ModCategory
   source: ModCatalogSource
   version?: string
+  status?: CatalogModStatus
+}
+
+export function isCatalogModPlaceholder(mod: CatalogMod): boolean {
+  return mod.status === 'coming_soon'
 }
 
 export interface CatalogResult {

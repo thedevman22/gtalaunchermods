@@ -11,8 +11,9 @@ const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET
 const STRIPE_PRICE_PRO = process.env.STRIPE_PRICE_PRO
 const STRIPE_PRICE_ELITE = process.env.STRIPE_PRICE_ELITE
-const STRIPE_SUCCESS_URL = process.env.STRIPE_SUCCESS_URL ?? 'http://localhost:4242/checkout/success'
-const STRIPE_CANCEL_URL = process.env.STRIPE_CANCEL_URL ?? 'http://localhost:4242/checkout/cancel'
+const STRIPE_SUCCESS_URL =
+  process.env.STRIPE_SUCCESS_URL ?? 'http://localhost:3000/pricing?checkout=success'
+const STRIPE_CANCEL_URL = process.env.STRIPE_CANCEL_URL ?? 'http://localhost:3000/pricing?checkout=cancel'
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN ?? 'http://localhost:5173'
@@ -66,7 +67,7 @@ app.get('/checkout/success', (_req, res) => {
   res.type('html').send(`<!DOCTYPE html>
 <html><head><title>Payment successful</title></head>
 <body style="font-family:system-ui;background:#0a0a0f;color:#e8e8f0;display:flex;align-items:center;justify-content:center;height:100vh">
-  <div style="text-align:center"><h1>Payment successful</h1><p>Return to GTA Mod Launcher — your tier will update shortly.</p></div>
+  <div style="text-align:center"><h1>Payment successful</h1><p>Return to ModHarbor — your tier will update shortly.</p></div>
 </body></html>`)
 })
 

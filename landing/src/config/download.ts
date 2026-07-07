@@ -9,7 +9,7 @@ const GITHUB_REPO = 'gtalaunchermods'
 
 /** Matches electron-builder `artifactName`: ${productName}-${version}-setup.exe */
 function githubReleaseArtifactName(version: string): string {
-  return `GTA Mod Launcher-${version}-setup.exe`
+  return `ModHarbor-${version}-setup.exe`
 }
 
 function buildGitHubReleaseDownloadUrl(version: string): string {

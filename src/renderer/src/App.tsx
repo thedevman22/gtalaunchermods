@@ -3,16 +3,20 @@ import { AnimatePresence, motion } from 'framer-motion'
 import Sidebar from '@renderer/components/Sidebar'
 import UpdateBanner from '@renderer/components/UpdateBanner'
 import SplashScreen from '@renderer/components/SplashScreen'
+import OnboardingWizard from '@renderer/components/OnboardingWizard'
 import HomePage from '@renderer/pages/HomePage'
 import ModsPage from '@renderer/pages/ModsPage'
 import SettingsPage from '@renderer/pages/SettingsPage'
 import AccountPage from '@renderer/pages/AccountPage'
 import LoginPage from '@renderer/pages/LoginPage'
 import { AuthProvider, useAuth } from '@renderer/context/AuthContext'
+import { UpgradeFlowProvider } from '@renderer/context/UpgradeFlowContext'
 import { LaunchProvider } from '@renderer/context/LaunchContext'
+import { ProfileProvider } from '@renderer/context/ProfileContext'
 import { ModSyncProvider } from '@renderer/context/ModSyncContext'
 import { useStartupSequence } from '@renderer/hooks/useStartupSequence'
 import { pageTransition } from '@renderer/lib/motion'
+import type { OnboardingState } from '../../shared/onboarding'
 import type { NavItem } from '@renderer/types/navigation'
 
 const PAGE_TITLES: Record<NavItem, string> = {
@@ -45,9 +49,7 @@ function MainShell(): React.JSX.Element {
       case 'home':
         return <HomePage />
       case 'mods':
-        return (
-          <ModsPage onNavigateSettings={() => setActiveNav('settings')} />
-        )
+        return <ModsPage onNavigateSettings={() => setActiveNav('settings')} />
       case 'settings':
         return <SettingsPage />
       case 'account':
@@ -62,8 +64,8 @@ function MainShell(): React.JSX.Element {
       <main className="flex min-w-0 flex-1 flex-col">
         <UpdateBanner />
         {isOfflineDev && (
-          <div className="border-b border-amber-500/30 bg-amber-500/10 px-6 py-2 text-center text-xs text-amber-200">
-            Offline dev mode — add Supabase keys to <code className="text-amber-100">.env</code> to enable login
+          <div className="border-b border-amber-500/30 bg-amber-500/10 px-6 py-2 text-center text-xs text-amber-700">
+            Offline dev mode — add Supabase keys to <code className="text-amber-800">.env</code> to enable login
           </div>
         )}
         <header className="flex h-12 shrink-0 items-center border-b border-launcher-border/60 px-6">
@@ -88,6 +90,14 @@ function AppContent(): React.JSX.Element {
   const { session, loading, isOfflineDev } = useAuth()
   const startup = useStartupSequence(!loading)
   const showMain = startup.phase === 'hidden'
+  const [onboarding, setOnboarding] = useState<OnboardingState | null>(null)
+
+  useEffect(() => {
+    if (!showMain) return
+
+    void window.api.onboarding.getState().then(setOnboarding)
+    return window.api.onboarding.onChanged(setOnboarding)
+  }, [showMain])
 
   if (!showMain) {
     return (
@@ -99,9 +109,33 @@ function AppContent(): React.JSX.Element {
     )
   }
 
+  if (!session && !isOfflineDev) {
+    return (
+      <div className="app-enter h-full">
+        <LoginPage />
+      </div>
+    )
+  }
+
+  if (!onboarding) {
+    return (
+      <div className="flex h-full items-center justify-center bg-launcher-bg">
+        <span className="text-sm text-launcher-muted">Loading…</span>
+      </div>
+    )
+  }
+
+  if (!onboarding.complete) {
+    return (
+      <div className="app-enter h-full">
+        <OnboardingWizard onComplete={() => setOnboarding({ ...onboarding, complete: true })} />
+      </div>
+    )
+  }
+
   return (
     <div className="app-enter h-full">
-      {!session && !isOfflineDev ? <LoginPage /> : <MainShell />}
+      <MainShell />
     </div>
   )
 }
@@ -109,11 +143,15 @@ function AppContent(): React.JSX.Element {
 export default function App(): React.JSX.Element {
   return (
     <AuthProvider>
-      <ModSyncProvider>
-        <LaunchProvider>
-          <AppContent />
-        </LaunchProvider>
-      </ModSyncProvider>
+      <UpgradeFlowProvider>
+        <ModSyncProvider>
+          <LaunchProvider>
+            <ProfileProvider>
+              <AppContent />
+            </ProfileProvider>
+          </LaunchProvider>
+        </ModSyncProvider>
+      </UpgradeFlowProvider>
     </AuthProvider>
   )
 }

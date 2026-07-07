@@ -1,8 +1,9 @@
-import { createWriteStream, existsSync, mkdirSync, readFileSync, rmSync } from 'fs'
+import { createWriteStream, existsSync, mkdirSync, readFileSync, rmSync, watch } from 'fs'
 import { get as httpGet } from 'http'
 import { get as httpsGet } from 'https'
 import { join } from 'path'
-import { app, ipcMain, shell } from 'electron'
+import { BrowserWindow, app, ipcMain, shell } from 'electron'
+import { is } from '@electron-toolkit/utils'
 import type { CatalogMod, CatalogResult } from '../shared/catalog'
 import { DEFAULT_GAME_ID, resolveGameId } from '../shared/games'
 import type { ModImportResult } from '../shared/mods'
@@ -88,6 +89,10 @@ export async function installCatalogMod(
     return { success: true }
   }
 
+  if (catalogMod.status === 'coming_soon') {
+    return { success: false, error: 'This mod is not available yet.' }
+  }
+
   const existing = findModByCatalogId(catalogId)
   if (existing) {
     return {
@@ -155,5 +160,18 @@ export function registerCatalogIpc(): void {
       }
     }
     return installed
+  })
+}
+
+export function registerCatalogWatcher(): void {
+  if (!is.dev) return
+
+  const catalogPath = getCatalogPath()
+  if (!existsSync(catalogPath)) return
+
+  watch(catalogPath, () => {
+    for (const window of BrowserWindow.getAllWindows()) {
+      window.webContents.send('catalog:changed')
+    }
   })
 }

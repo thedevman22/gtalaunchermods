@@ -10,6 +10,8 @@ export interface UserProfile {
   sync_preferences_enabled: boolean
   theme_preference: ThemePreference
   default_install_path: string | null
+  game_id: string | null
+  game_edition: string | null
 }
 
 export interface OAuthCallbackInfo {

@@ -1,28 +1,47 @@
 import { DOWNLOAD_CONFIG } from '@/config/download'
 
 export const SITE = {
-  name: 'GTA Mod Launcher',
-  tagline: 'Free, safe, story-mode-only mod management for GTA V',
+  name: 'ModHarbor',
+  tagline: 'Free, safe, story-mode mod management — calm and premium',
   description:
-    'A free desktop launcher to manage GTA V mods safely. Story-mode offline play only — no online, no paywalls on mods.',
+    'ModHarbor is a free desktop launcher to manage game mods safely. Story-mode offline play only — no online, no paywalls on mods.',
   downloadUrl: DOWNLOAD_CONFIG.downloadUrl,
-  discordUrl: process.env.NEXT_PUBLIC_DISCORD_URL ?? 'https://discord.gg/gta-mod-launcher',
+  discordUrl: process.env.NEXT_PUBLIC_DISCORD_URL ?? 'https://discord.gg/modharbor',
   installUrl: '/#install',
   termsUrl: '/terms'
 } as const
 
+export const SUPPORTED_GAMES = [
+  {
+    id: 'gta5',
+    title: 'Grand Theft Auto V',
+    status: 'supported' as const,
+    tagline: 'Story mode · Offline launches · Steam, Epic, or Rockstar',
+    description:
+      'Full ModHarbor support today — mod profiles, catalog browsing, drag-and-drop imports, and offline story-mode launch with -scOfflineOnly.'
+  },
+  {
+    id: 'gta6',
+    title: 'Grand Theft Auto VI',
+    status: 'coming_soon' as const,
+    tagline: 'Harbor support planned after release',
+    description:
+      'We are preparing ModHarbor for the next chapter. Join Discord for updates — no ETA yet, and no official branding on this page.'
+  }
+]
+
 export const FEATURES = [
   {
     icon: '📦',
-    title: 'Mod Manager',
+    title: 'Mod Profiles',
     description:
-      'Import .zip mods into a separate library, enable or disable with one click, and deploy cleanly into GTA V with tracked manifests.'
+      'Named loadouts with their own mod lists. Launch a profile to deploy exactly those mods — previous files are cleaned up first.'
   },
   {
     icon: '🛡️',
     title: 'Story-Mode-Safe Launch',
     description:
-      'Launches GTA5.exe directly with -scOfflineOnly — no Rockstar launcher, no online sessions. Built for single-player modding.'
+      'Launches with -scOfflineOnly — no online sessions. Built for single-player modding only.'
   },
   {
     icon: '⚡',
@@ -46,7 +65,7 @@ export const FEATURES = [
     icon: '🖥️',
     title: 'Native Windows App',
     description:
-      'A lightweight Electron desktop app with a dark gaming UI — fast, offline-ready, and built for modders.'
+      'A lightweight Electron desktop app with a bright coastal UI — fast, offline-ready, and built for modders.'
   }
 ] as const
 
@@ -110,25 +129,23 @@ export const COMPARISON_ROWS = [
   { feature: 'Mods are free', free: true, pro: true, elite: true }
 ] as const
 
-export const HOW_IT_WORKS_STEPS = [
+export const APP_MOCKUPS = [
   {
-    title: 'Download',
-    description:
-      'Grab the free Windows installer and run the setup wizard. The launcher auto-detects GTA V from Steam, Epic, or Rockstar.'
+    id: 'profiles' as const,
+    title: 'Mod profiles',
+    caption:
+      'Create named loadouts like “Realistic Graphics” or “Chaos Mode.” Each profile tracks its own mods — launch applies exactly that set.'
   },
   {
-    title: 'Sign In',
-    description:
-      'Create an account with email or Google — the same login works on this site and in the desktop app, so your profile travels with you.'
+    id: 'catalog' as const,
+    title: 'Mod catalog',
+    caption:
+      'Browse by category, import .zip archives, and add mods to your selected profile. Pro unlocks one-click install from the catalog.'
   },
   {
-    title: 'Browse Mods',
-    description:
-      'Explore the built-in catalog, import .zip archives, and toggle mods on or off. Your library stays isolated until you enable each mod.'
-  },
-  {
-    title: 'Launch Story Mode',
-    description:
-      'Hit Play to launch GTA V with -scOfflineOnly enforced. Story mode only, offline-safe, with your enabled mods deployed cleanly.'
+    id: 'launch' as const,
+    title: 'Story-mode launch',
+    caption:
+      'Launch undeploys the previous profile, applies yours in order, and starts GTA V with -scOfflineOnly — offline single-player only.'
   }
 ] as const

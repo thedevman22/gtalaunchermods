@@ -21,8 +21,10 @@ export const OFFLINE_DEV_PROFILE: UserProfile = {
   role_badge: 'Free Member',
   created_at: new Date().toISOString(),
   sync_preferences_enabled: false,
-  theme_preference: 'dark',
-  default_install_path: null
+  theme_preference: 'light',
+  default_install_path: null,
+  game_id: 'gta5',
+  game_edition: 'legacy'
 }
 
 export const supabase = isSupabaseConfigured
@@ -46,8 +48,10 @@ export async function fetchUserProfile(userId: string, email: string): Promise<U
     return {
       ...(data as UserProfile),
       sync_preferences_enabled: Boolean((data as UserProfile).sync_preferences_enabled ?? false),
-      theme_preference: ((data as UserProfile).theme_preference ?? 'dark') as UserProfile['theme_preference'],
-      default_install_path: (data as UserProfile).default_install_path ?? null
+      theme_preference: ((data as UserProfile).theme_preference ?? 'light') as UserProfile['theme_preference'],
+      default_install_path: (data as UserProfile).default_install_path ?? null,
+      game_id: (data as UserProfile).game_id ?? 'gta5',
+      game_edition: (data as UserProfile).game_edition ?? 'legacy'
     }
   }
 
@@ -63,8 +67,10 @@ export async function fetchUserProfile(userId: string, email: string): Promise<U
       subscription_tier: 'free',
       role_badge: 'Free Member',
       sync_preferences_enabled: false,
-      theme_preference: 'dark',
-      default_install_path: null
+      theme_preference: 'light',
+      default_install_path: null,
+      game_id: 'gta5',
+      game_edition: 'legacy'
     })
     .select('*')
     .single()

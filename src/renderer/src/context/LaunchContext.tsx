@@ -10,11 +10,12 @@ import {
 } from 'react'
 import { LAUNCH_STAGES } from '@renderer/data/splashTips'
 import LaunchOverlay from '@renderer/components/LaunchOverlay'
-import { DEFAULT_GAME_ID } from '../../../shared/games'
 
 interface LaunchContextValue {
   isLaunching: boolean
+  launchingProfileId: string | null
   startLaunch: () => Promise<void>
+  startProfileLaunch: (profileId: string) => Promise<void>
 }
 
 const LaunchContext = createContext<LaunchContextValue | null>(null)
@@ -25,6 +26,7 @@ function delay(ms: number): Promise<void> {
 
 export function LaunchProvider({ children }: { children: ReactNode }): React.JSX.Element {
   const [isLaunching, setIsLaunching] = useState(false)
+  const [launchingProfileId, setLaunchingProfileId] = useState<string | null>(null)
   const [progress, setProgress] = useState(0)
   const [statusText, setStatusText] = useState<string>(LAUNCH_STAGES[0])
   const [error, setError] = useState<string | null>(null)
@@ -39,6 +41,7 @@ export function LaunchProvider({ children }: { children: ReactNode }): React.JSX
         setStatusText('Game started — have fun in Los Santos!')
         window.setTimeout(() => {
           setIsLaunching(false)
+          setLaunchingProfileId(null)
           launchActive.current = false
         }, 700)
       }
@@ -47,6 +50,7 @@ export function LaunchProvider({ children }: { children: ReactNode }): React.JSX
         setError(payload.error)
         window.setTimeout(() => {
           setIsLaunching(false)
+          setLaunchingProfileId(null)
           launchActive.current = false
         }, 2500)
       }
@@ -55,68 +59,97 @@ export function LaunchProvider({ children }: { children: ReactNode }): React.JSX
     return unsubscribe
   }, [])
 
-  const startLaunch = useCallback(async (): Promise<void> => {
-    if (launchActive.current) return
+  const runLaunchSequence = useCallback(
+    async (profileId: string | null, modCount: number): Promise<void> => {
+      if (launchActive.current) return
 
-    launchActive.current = true
-    setIsLaunching(true)
-    setError(null)
-    setProgress(8)
-    setStatusText(LAUNCH_STAGES[0])
+      launchActive.current = true
+      setIsLaunching(true)
+      setLaunchingProfileId(profileId)
+      setError(null)
+      setProgress(8)
+      setStatusText('Clearing previous profile mods…')
 
-    try {
-      const library = await window.api.mods.list(DEFAULT_GAME_ID)
-      const enabledCount = library.mods.filter((mod) => mod.enabled).length
-      setProgress(28)
-      setStatusText(
-        enabledCount > 0
-          ? `Applying mods… (${enabledCount} active)`
-          : 'Applying mods… (none enabled)'
-      )
-      await delay(750)
+      try {
+        setProgress(24)
+        setStatusText(
+          modCount > 0
+            ? `Applying profile mods… (${modCount} mod${modCount === 1 ? '' : 's'})`
+            : 'No mods in profile — launching vanilla story mode'
+        )
+        await delay(650)
 
-      setProgress(52)
-      setStatusText(LAUNCH_STAGES[1])
-      await delay(650)
+        setProgress(52)
+        setStatusText(LAUNCH_STAGES[1])
+        await delay(650)
 
-      setProgress(72)
-      setStatusText(LAUNCH_STAGES[2])
+        setProgress(72)
+        setStatusText(LAUNCH_STAGES[2])
 
-      const result = await window.api.game.launch()
-      if (!result.success) {
-        setError(result.error ?? 'Failed to launch GTA V.')
-        setProgress(100)
+        const result = profileId
+          ? await window.api.profiles.launch(profileId)
+          : await window.api.game.launch()
+
+        if (!result.success) {
+          setError(result.error ?? 'Failed to launch GTA V.')
+          setProgress(100)
+          await delay(2200)
+          setIsLaunching(false)
+          setLaunchingProfileId(null)
+          launchActive.current = false
+          return
+        }
+
+        setProgress(92)
+        await delay(500)
+
+        const status = await window.api.game.getStatus()
+        if (status.status === 'running') {
+          setProgress(100)
+          setStatusText('Game started — have fun in Los Santos!')
+          await delay(700)
+          setIsLaunching(false)
+          setLaunchingProfileId(null)
+          launchActive.current = false
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Launch failed.')
         await delay(2200)
         setIsLaunching(false)
-        launchActive.current = false
-        return
-      }
-
-      setProgress(92)
-      await delay(500)
-
-      const status = await window.api.game.getStatus()
-      if (status.status === 'running') {
-        setProgress(100)
-        setStatusText('Game started — have fun in Los Santos!')
-        await delay(700)
-        setIsLaunching(false)
+        setLaunchingProfileId(null)
         launchActive.current = false
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Launch failed.')
-      await delay(2200)
-      setIsLaunching(false)
-      launchActive.current = false
+    },
+    []
+  )
+
+  const startProfileLaunch = useCallback(
+    async (profileId: string): Promise<void> => {
+      const profile = await window.api.profiles.get(profileId)
+      await runLaunchSequence(profileId, profile?.modIds.length ?? 0)
+    },
+    [runLaunchSequence]
+  )
+
+  const startLaunch = useCallback(async (): Promise<void> => {
+    const profiles = await window.api.profiles.list()
+    if (profiles.length > 0) {
+      const activeId = await window.api.profiles.getActiveId()
+      const targetId = activeId || profiles[0].id
+      await startProfileLaunch(targetId)
+      return
     }
-  }, [])
+    await runLaunchSequence(null, 0)
+  }, [runLaunchSequence, startProfileLaunch])
 
   const value = useMemo<LaunchContextValue>(
     () => ({
       isLaunching,
-      startLaunch
+      launchingProfileId,
+      startLaunch,
+      startProfileLaunch
     }),
-    [isLaunching, startLaunch]
+    [isLaunching, launchingProfileId, startLaunch, startProfileLaunch]
   )
 
   return (

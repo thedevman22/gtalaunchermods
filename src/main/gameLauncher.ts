@@ -1,8 +1,18 @@
 import { spawn, type ChildProcess } from 'child_process'
-import { existsSync, readFileSync, writeFileSync } from 'fs'
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'fs'
 import { basename, dirname, join, normalize } from 'path'
 import { BrowserWindow, dialog, ipcMain, type IpcMainInvokeEvent, type OpenDialogOptions } from 'electron'
-import { PersistentStore } from './persistentStore'
+import { createRequire } from 'node:module'
+import type StoreType from 'electron-store'
+import type { SubscriptionTier } from '../shared/profile'
+import {
+  DEFAULT_GAME_ID,
+  getExeFileNameForEdition,
+  getEditionLabel,
+  isGameEdition,
+  type GameEdition,
+  type GameId
+} from '../shared/games'
 import type {
   GamePathCandidate,
   GamePathInfo,
@@ -12,19 +22,49 @@ import type {
   OperationResult
 } from '../shared/game'
 
-interface LauncherStoreSchema extends Record<string, unknown> {
+const require = createRequire(import.meta.url)
+const Store = require('electron-store') as typeof StoreType
+
+interface LauncherStoreSchema {
   gta5ExePath: string
+  gameId: GameId
+  gameEdition: GameEdition
+  onboardingComplete: boolean
+  subscriptionTier: SubscriptionTier
+  lastDeployedProfileId: string
 }
 
 const COMMANDLINE_CONTENT = '-scOfflineOnly'
-const GTA_EXE_NAME = 'GTA5.exe'
 
-let store: PersistentStore<LauncherStoreSchema> | null = null
+const STEAM_GAME_FOLDERS: Record<GameEdition, string[]> = {
+  legacy: ['Grand Theft Auto V'],
+  enhanced: ['Grand Theft Auto V Enhanced', 'Grand Theft Auto V']
+}
 
-function getStore(): PersistentStore<LauncherStoreSchema> {
+const EPIC_GAME_FOLDERS: Record<GameEdition, string[]> = {
+  legacy: ['GTAV', 'Grand Theft Auto V'],
+  enhanced: ['GTAV Enhanced', 'Grand Theft Auto V Enhanced', 'GTAV', 'Grand Theft Auto V']
+}
+
+const ROCKSTAR_GAME_FOLDERS: Record<GameEdition, string[]> = {
+  legacy: ['Grand Theft Auto V'],
+  enhanced: ['Grand Theft Auto V Enhanced', 'Grand Theft Auto V']
+}
+
+let store: StoreType<LauncherStoreSchema> | null = null
+
+function getStore(): StoreType<LauncherStoreSchema> {
   if (!store) {
-    store = new PersistentStore<LauncherStoreSchema>('gta-mod-launcher', {
-      gta5ExePath: ''
+    store = new Store<LauncherStoreSchema>({
+      name: 'modharbor',
+      defaults: {
+        gta5ExePath: '',
+        gameId: DEFAULT_GAME_ID,
+        gameEdition: 'legacy',
+        onboardingComplete: false,
+        subscriptionTier: 'free',
+        lastDeployedProfileId: ''
+      }
     })
   }
   return store
@@ -55,6 +95,22 @@ function pathExists(filePath: string): boolean {
   }
 }
 
+function sourceLabel(source: GamePathSource, edition: GameEdition): string {
+  const editionTag = getEditionLabel(edition)
+  switch (source) {
+    case 'steam':
+      return `Steam · ${editionTag}`
+    case 'epic':
+      return `Epic Games · ${editionTag}`
+    case 'rockstar':
+      return `Rockstar Games · ${editionTag}`
+    case 'saved':
+      return `Saved · ${editionTag}`
+    default:
+      return editionTag
+  }
+}
+
 export function getLaunchStatus(): LaunchStatusPayload {
   return { status: currentStatus, error: statusError }
 }
@@ -67,23 +123,68 @@ export function saveGamePath(exePath: string): void {
   getStore().set('gta5ExePath', normalize(exePath))
 }
 
-export function validateGamePath(exePath: string): {
+export function getGameId(): GameId {
+  return getStore().get('gameId', DEFAULT_GAME_ID)
+}
+
+export function getGameEdition(): GameEdition {
+  return getStore().get('gameEdition', 'legacy')
+}
+
+export function setGameSelection(gameId: GameId, edition: GameEdition): void {
+  getStore().set('gameId', gameId)
+  getStore().set('gameEdition', edition)
+}
+
+export function isOnboardingComplete(): boolean {
+  return Boolean(getStore().get('onboardingComplete', false))
+}
+
+export function setOnboardingComplete(complete: boolean): void {
+  getStore().set('onboardingComplete', complete)
+}
+
+export function resetOnboardingState(): void {
+  getStore().set('onboardingComplete', false)
+}
+
+export function getSubscriptionTier(): SubscriptionTier {
+  return getStore().get('subscriptionTier', 'free')
+}
+
+export function setSubscriptionTier(tier: SubscriptionTier): void {
+  getStore().set('subscriptionTier', tier)
+}
+
+export function getLastDeployedProfileId(): string {
+  return getStore().get('lastDeployedProfileId', '') ?? ''
+}
+
+export function setLastDeployedProfileId(profileId: string): void {
+  getStore().set('lastDeployedProfileId', profileId)
+}
+
+export function validateGamePath(
+  exePath: string,
+  edition: GameEdition = getGameEdition()
+): {
   valid: boolean
   error?: string
   gameRoot?: string
 } {
   if (!exePath?.trim()) {
-    return { valid: false, error: 'No GTA V path configured.' }
+    return { valid: false, error: 'No game path configured.' }
   }
 
   const normalized = normalize(exePath.trim())
+  const expectedExe = getExeFileNameForEdition(edition)
 
-  if (basename(normalized).toLowerCase() !== GTA_EXE_NAME.toLowerCase()) {
-    return { valid: false, error: `Selected file must be ${GTA_EXE_NAME}.` }
+  if (basename(normalized).toLowerCase() !== expectedExe.toLowerCase()) {
+    return { valid: false, error: `Selected file must be ${expectedExe}.` }
   }
 
   if (!pathExists(normalized)) {
-    return { valid: false, error: `GTA V executable not found at: ${normalized}` }
+    return { valid: false, error: `Game executable not found at: ${normalized}` }
   }
 
   return { valid: true, gameRoot: dirname(normalized) }
@@ -103,7 +204,8 @@ function getSteamLibraryRoots(): string[] {
     join(programFiles, 'Steam'),
     'C:\\Steam',
     'D:\\Steam',
-    'E:\\Steam'
+    'E:\\Steam',
+    'F:\\Steam'
   ]
 
   for (const steamRoot of steamCandidates) {
@@ -127,9 +229,83 @@ function getSteamLibraryRoots(): string[] {
   return [...roots]
 }
 
-export function detectGamePaths(): GamePathCandidate[] {
+function getEpicInstallLocations(): string[] {
+  if (process.platform !== 'win32') {
+    return []
+  }
+
+  const locations = new Set<string>()
+  const manifestDir = join(
+    process.env.ProgramData || 'C:\\ProgramData',
+    'Epic',
+    'EpicGamesLauncher',
+    'Data',
+    'Manifests'
+  )
+
+  if (!pathExists(manifestDir)) {
+    return []
+  }
+
+  try {
+    for (const entry of readdirSync(manifestDir, { withFileTypes: true })) {
+      if (!entry.isFile()) continue
+      if (!entry.name.endsWith('.item') && !entry.name.endsWith('.manifest')) continue
+
+      try {
+        const raw = readFileSync(join(manifestDir, entry.name), 'utf-8')
+        const parsed = JSON.parse(raw) as {
+          InstallLocation?: string
+          DisplayName?: string
+          AppName?: string
+        }
+
+        if (!parsed.InstallLocation) continue
+
+        const haystack = `${parsed.DisplayName ?? ''} ${parsed.AppName ?? ''}`.toLowerCase()
+        if (
+          haystack.includes('grand theft auto') ||
+          haystack.includes('gtav') ||
+          haystack.includes('gta v')
+        ) {
+          locations.add(parsed.InstallLocation)
+        }
+      } catch {
+        // Skip malformed manifest entries
+      }
+    }
+  } catch {
+    return []
+  }
+
+  return [...locations]
+}
+
+function getRockstarInstallBases(): string[] {
+  if (process.platform !== 'win32') {
+    return []
+  }
+
+  const bases = new Set<string>()
+  const programFiles = process.env.ProgramFiles || 'C:\\Program Files'
+  const programFilesX86 = process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)'
+
+  for (const root of [programFiles, programFilesX86]) {
+    bases.add(join(root, 'Rockstar Games'))
+  }
+
+  const userProfile = process.env.USERPROFILE
+  if (userProfile) {
+    bases.add(join(userProfile, 'Documents', 'Rockstar Games'))
+  }
+
+  return [...bases]
+}
+
+export function detectGamePaths(edition: GameEdition = getGameEdition()): GamePathCandidate[] {
   const candidates: GamePathCandidate[] = []
   const seen = new Set<string>()
+  const exeName = getExeFileNameForEdition(edition)
 
   const addCandidate = (exePath: string, source: GamePathSource): void => {
     const normalized = normalize(exePath)
@@ -140,45 +316,53 @@ export function detectGamePaths(): GamePathCandidate[] {
     }
 
     seen.add(key)
-    candidates.push({ path: normalized, source })
+    candidates.push({
+      path: normalized,
+      source,
+      label: sourceLabel(source, edition)
+    })
+  }
+
+  const scanFolderForExe = (folder: string, source: GamePathSource): void => {
+    if (!pathExists(folder)) return
+    addCandidate(join(folder, exeName), source)
   }
 
   if (process.platform === 'win32') {
     for (const libraryRoot of getSteamLibraryRoots()) {
-      addCandidate(
-        join(libraryRoot, 'steamapps', 'common', 'Grand Theft Auto V', GTA_EXE_NAME),
-        'steam'
-      )
+      for (const folderName of STEAM_GAME_FOLDERS[edition]) {
+        scanFolderForExe(join(libraryRoot, 'steamapps', 'common', folderName), 'steam')
+      }
     }
 
     const epicBases = [
       join(process.env.ProgramFiles || 'C:\\Program Files', 'Epic Games'),
       join(process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)', 'Epic Games'),
       'D:\\Epic Games',
-      'E:\\Epic Games'
+      'E:\\Epic Games',
+      'F:\\Epic Games',
+      ...getEpicInstallLocations()
     ]
 
     for (const epicBase of epicBases) {
-      addCandidate(join(epicBase, 'GTAV', GTA_EXE_NAME), 'epic')
-      addCandidate(join(epicBase, 'Grand Theft Auto V', GTA_EXE_NAME), 'epic')
+      if (pathExists(epicBase) && basename(epicBase).toLowerCase().includes('gta')) {
+        scanFolderForExe(epicBase, 'epic')
+      }
+
+      for (const folderName of EPIC_GAME_FOLDERS[edition]) {
+        scanFolderForExe(join(epicBase, folderName), 'epic')
+      }
     }
 
-    const rockstarBases = [
-      join(process.env.ProgramFiles || 'C:\\Program Files', 'Rockstar Games', 'Grand Theft Auto V'),
-      join(
-        process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)',
-        'Rockstar Games',
-        'Grand Theft Auto V'
-      )
-    ]
-
-    for (const rockstarBase of rockstarBases) {
-      addCandidate(join(rockstarBase, GTA_EXE_NAME), 'rockstar')
+    for (const rockstarBase of getRockstarInstallBases()) {
+      for (const folderName of ROCKSTAR_GAME_FOLDERS[edition]) {
+        scanFolderForExe(join(rockstarBase, folderName), 'rockstar')
+      }
     }
   }
 
   const saved = getSavedGamePath()
-  if (saved) {
+  if (saved && validateGamePath(saved, edition).valid) {
     addCandidate(saved, 'saved')
   }
 
@@ -186,12 +370,13 @@ export function detectGamePaths(): GamePathCandidate[] {
 }
 
 export function getResolvedGamePath(): string {
+  const edition = getGameEdition()
   const saved = getSavedGamePath()
-  if (validateGamePath(saved).valid) {
+  if (validateGamePath(saved, edition).valid) {
     return saved
   }
 
-  const detected = detectGamePaths()
+  const detected = detectGamePaths(edition)
   return detected[0]?.path ?? ''
 }
 
@@ -218,12 +403,14 @@ export async function launchGame(): Promise<OperationResult> {
     return { success: false, error: 'Game is already launching or running.' }
   }
 
+  const edition = getGameEdition()
+  const exeName = getExeFileNameForEdition(edition)
   let exePath = getSavedGamePath()
 
-  if (!validateGamePath(exePath).valid) {
-    const detected = detectGamePaths()
+  if (!validateGamePath(exePath, edition).valid) {
+    const detected = detectGamePaths(edition)
     if (detected.length === 0) {
-      const error = 'GTA V not found. Browse to GTA5.exe or install the game.'
+      const error = `GTA V not found. Browse to ${exeName} or install the game.`
       setStatus('error', error)
       return { success: false, error }
     }
@@ -232,9 +419,9 @@ export async function launchGame(): Promise<OperationResult> {
     saveGamePath(exePath)
   }
 
-  const validation = validateGamePath(exePath)
+  const validation = validateGamePath(exePath, edition)
   if (!validation.valid || !validation.gameRoot) {
-    const error = validation.error ?? 'Invalid GTA V path.'
+    const error = validation.error ?? 'Invalid game path.'
     setStatus('error', error)
     return { success: false, error }
   }
@@ -285,9 +472,11 @@ export async function launchGame(): Promise<OperationResult> {
 }
 
 async function browseGamePath(event: IpcMainInvokeEvent): Promise<OperationResult> {
+  const edition = getGameEdition()
+  const exeName = getExeFileNameForEdition(edition)
   const parentWindow = BrowserWindow.fromWebContents(event.sender)
   const dialogOptions: OpenDialogOptions = {
-    title: 'Select GTA5.exe',
+    title: `Select ${exeName}`,
     properties: ['openFile'],
     filters: [{ name: 'GTA V Executable', extensions: ['exe'] }]
   }
@@ -301,7 +490,7 @@ async function browseGamePath(event: IpcMainInvokeEvent): Promise<OperationResul
   }
 
   const selected = result.filePaths[0]
-  const validation = validateGamePath(selected)
+  const validation = validateGamePath(selected, edition)
   if (!validation.valid) {
     return { success: false, error: validation.error }
   }
@@ -313,7 +502,15 @@ async function browseGamePath(event: IpcMainInvokeEvent): Promise<OperationResul
 
 export function registerGameLauncherIpc(): void {
   ipcMain.handle('game:getPath', () => getGamePathInfo())
-  ipcMain.handle('game:detectPaths', () => detectGamePaths())
+  ipcMain.handle('game:detectPaths', (_event, edition: unknown) => {
+    if (edition === undefined) {
+      return detectGamePaths()
+    }
+    if (typeof edition === 'string' && isGameEdition(edition)) {
+      return detectGamePaths(edition)
+    }
+    return []
+  })
   ipcMain.handle('game:getStatus', () => getLaunchStatus())
   ipcMain.handle('game:launch', () => launchGame())
   ipcMain.handle('game:browsePath', (event) => browseGamePath(event))
@@ -331,4 +528,8 @@ export function registerGameLauncherIpc(): void {
     void import('./dependencyManager').then(({ emitSetupChanged }) => emitSetupChanged())
     return { success: true, path: exePath } satisfies OperationResult
   })
+  ipcMain.handle('game:getConfig', () => ({
+    gameId: getGameId(),
+    edition: getGameEdition()
+  }))
 }

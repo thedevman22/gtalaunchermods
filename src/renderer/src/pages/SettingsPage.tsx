@@ -3,6 +3,7 @@ import AnimatedToggle from '@renderer/components/AnimatedToggle'
 import MotionButton from '@renderer/components/MotionButton'
 import { useAuth } from '@renderer/context/AuthContext'
 import type { ThemePreference } from '../../../shared/profile'
+import type { UserPreferences } from '../../../shared/sync'
 import type { UpdateStatusPayload } from '../../../shared/update'
 import {
   applySyncedPreferences,
@@ -14,7 +15,7 @@ export default function SettingsPage(): React.JSX.Element {
   const { user, profile, isOfflineDev, refreshProfile } = useAuth()
   const [gamePath, setGamePath] = useState('')
   const [syncEnabled, setSyncEnabled] = useState(false)
-  const [theme, setTheme] = useState<ThemePreference>('dark')
+  const [theme, setTheme] = useState<ThemePreference>('light')
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -138,7 +139,9 @@ export default function SettingsPage(): React.JSX.Element {
     try {
       await applySyncedPreferences({
         theme_preference: profile.theme_preference,
-        default_install_path: profile.default_install_path
+        default_install_path: profile.default_install_path,
+        game_id: (profile.game_id ?? 'gta5') as UserPreferences['game_id'],
+        game_edition: (profile.game_edition ?? 'legacy') as UserPreferences['game_edition']
       })
       await loadLocalSettings()
       setMessage('Pulled preferences from your account.')
@@ -249,6 +252,34 @@ export default function SettingsPage(): React.JSX.Element {
               </MotionButton>
             ))}
           </div>
+        </div>
+
+        <div className="rounded-xl border border-launcher-border bg-launcher-surface/60 p-5">
+          <h3 className="text-sm font-semibold text-launcher-text">Setup wizard</h3>
+          <p className="mt-0.5 text-xs text-launcher-muted">
+            Re-run the first-run onboarding to change your game edition or reinstall path.
+          </p>
+          <MotionButton
+            disabled={busy}
+            onClick={async () => {
+              setError(null)
+              setMessage(null)
+              setBusy(true)
+              try {
+                const result = await window.api.onboarding.reset()
+                if (!result.success) {
+                  setError(result.error ?? 'Failed to reset onboarding.')
+                } else {
+                  setMessage('Onboarding reset. The setup wizard will open now.')
+                }
+              } finally {
+                setBusy(false)
+              }
+            }}
+            className="mt-4 rounded-lg border border-launcher-border px-4 py-2 text-xs font-semibold uppercase tracking-wider text-launcher-muted hover:border-launcher-accent/40 hover:text-launcher-accent disabled:opacity-50"
+          >
+            Reset onboarding
+          </MotionButton>
         </div>
 
         <div className="rounded-xl border border-launcher-border bg-launcher-surface/60 p-5">

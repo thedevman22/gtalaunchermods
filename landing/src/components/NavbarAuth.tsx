@@ -29,7 +29,7 @@ export default function NavbarAuth(): React.JSX.Element {
         </button>
         <a
           href={SITE.downloadUrl}
-          className="rounded-lg bg-gradient-to-r from-accent to-accent-dim px-4 py-2 text-xs font-bold uppercase tracking-wider text-bg shadow-[0_0_20px_rgba(0,230,118,0.2)] transition-transform hover:scale-[1.02]"
+          className="rounded-lg bg-gradient-to-r from-accent to-accent-dim px-4 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-[0_4px_16px_rgba(43,159,212,0.25)] transition-transform hover:scale-[1.02]"
         >
           Download
         </a>
@@ -47,7 +47,7 @@ export default function NavbarAuth(): React.JSX.Element {
       </Link>
       <Link
         href="/sign-up"
-        className="rounded-lg bg-gradient-to-r from-accent to-accent-dim px-4 py-2 text-xs font-bold uppercase tracking-wider text-bg shadow-[0_0_20px_rgba(0,230,118,0.2)] transition-transform hover:scale-[1.02]"
+        className="rounded-lg bg-gradient-to-r from-accent to-accent-dim px-4 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-[0_4px_16px_rgba(43,159,212,0.25)] transition-transform hover:scale-[1.02]"
       >
         Sign Up
       </Link>

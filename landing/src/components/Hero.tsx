@@ -1,81 +1,47 @@
 import { SITE } from '@/lib/constants'
 import DownloadCta from '@/components/DownloadCta'
 import HeroBackground from '@/components/HeroBackground'
+import ModHarborLogo from '@/components/ModHarborLogo'
 import ScrollReveal from '@/components/ScrollReveal'
+import WaveDivider from '@/components/WaveDivider'
 
 export default function Hero(): React.JSX.Element {
   return (
-    <section className="relative overflow-hidden px-4 pb-20 pt-16 sm:px-6 sm:pt-24 lg:pb-28">
+    <section className="relative overflow-hidden px-4 pb-16 pt-12 sm:px-6 sm:pt-20 lg:pb-20">
       <HeroBackground />
 
       <div className="relative mx-auto max-w-6xl">
         <ScrollReveal className="mx-auto max-w-3xl text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-accent">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
-            Story mode only · Offline · Free to download
+          <div className="mb-8 flex justify-center">
+            <ModHarborLogo
+              size={72}
+              className="shadow-[0_8px_32px_rgba(43,159,212,0.25)] ring-4 ring-white/80"
+            />
           </div>
 
-          <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-            The free, safe{' '}
-            <span className="bg-gradient-to-r from-accent to-accent-dim bg-clip-text text-transparent">
-              story-mode
-            </span>{' '}
-            GTA mod launcher
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-accent/25 bg-white/70 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-accent shadow-sm backdrop-blur-sm">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
+            Story mode only · Offline · Mods always free
+          </div>
+
+          <h1 className="font-display text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
+            Your calm harbor for{' '}
+            <span className="bg-gradient-to-r from-accent via-sky-500 to-cyan-400 bg-clip-text text-transparent">
+              GTA story-mode mods
+            </span>
           </h1>
 
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted sm:text-xl">
-            {SITE.name} helps you manage GTA V mods without touching online play. Import, enable,
-            and launch single-player with confidence — mods are never behind a paywall.
+            {SITE.name} is a free Windows launcher with mod profiles, a built-in catalog, and
+            offline-only launches. Organize loadouts, deploy cleanly, and play single-player with
+            confidence.
           </p>
 
           <DownloadCta className="mt-10" />
         </ScrollReveal>
-
-        <ScrollReveal delay={0.08} className="mx-auto mt-16 max-w-4xl">
-          <div className="overflow-hidden rounded-2xl border border-border bg-surface/60 shadow-2xl shadow-black/50 backdrop-blur-sm">
-            <div className="flex items-center gap-2 border-b border-border px-4 py-3">
-              <div className="h-3 w-3 rounded-full bg-red-500/80" />
-              <div className="h-3 w-3 rounded-full bg-amber-500/80" />
-              <div className="h-3 w-3 rounded-full bg-accent/80" />
-              <span className="ml-2 text-xs text-muted">{SITE.name}</span>
-            </div>
-            <div className="grid gap-px bg-border sm:grid-cols-[200px_1fr]">
-              <div className="hidden space-y-1 bg-elevated/80 p-4 sm:block">
-                {['Home', 'Mods', 'Settings', 'Account'].map((item, i) => (
-                  <div
-                    key={item}
-                    className={`rounded-lg px-3 py-2 text-xs font-medium ${
-                      i === 1 ? 'bg-accent/10 text-accent' : 'text-muted'
-                    }`}
-                  >
-                    {item}
-                  </div>
-                ))}
-              </div>
-              <div className="bg-bg/80 p-6">
-                <p className="text-xs font-semibold uppercase tracking-widest text-accent">
-                  Mod library
-                </p>
-                <h2 className="mt-1 text-lg font-bold">Your mods, your rules</h2>
-                <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                  {['NaturalVision', 'Script Hook V', 'LSPDFR'].map((mod) => (
-                    <div
-                      key={mod}
-                      className="rounded-lg border border-border bg-elevated/50 p-3"
-                    >
-                      <div className="mb-2 h-12 rounded-md bg-gradient-to-br from-border to-elevated" />
-                      <p className="text-xs font-medium">{mod}</p>
-                      <span className="mt-1 inline-block rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-bold uppercase text-accent">
-                        Enabled
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </ScrollReveal>
       </div>
+
+      <WaveDivider variant="accent" className="absolute bottom-0 left-0 right-0" />
     </section>
   )
 }

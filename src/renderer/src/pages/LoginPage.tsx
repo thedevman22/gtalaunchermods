@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '@renderer/context/AuthContext'
+import ModHarborLogo from '@renderer/components/ModHarborLogo'
 
 type AuthMode = 'login' | 'signup'
 
@@ -49,10 +50,10 @@ export default function LoginPage(): React.JSX.Element {
     <div className="flex h-full items-center justify-center bg-launcher-bg p-6">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-launcher-accent to-launcher-accent-dim shadow-[0_0_30px_var(--color-launcher-glow)]">
-            <span className="text-2xl font-black text-launcher-bg">G</span>
+          <div className="mx-auto mb-4 shadow-[0_8px_30px_rgba(43,159,212,0.25)]">
+            <ModHarborLogo size={56} className="rounded-xl" />
           </div>
-          <h1 className="font-display text-2xl font-bold text-launcher-text">GTA Mod Launcher</h1>
+          <h1 className="font-display text-2xl font-bold text-launcher-text">ModHarbor</h1>
           <p className="mt-2 text-sm text-launcher-muted">
             {mode === 'login' ? 'Sign in to manage your mods' : 'Create your launcher account'}
           </p>
@@ -129,7 +130,7 @@ export default function LoginPage(): React.JSX.Element {
             <button
               type="submit"
               disabled={submitting || loading}
-              className="w-full rounded-xl bg-gradient-to-r from-launcher-accent to-launcher-accent-dim py-3 text-sm font-bold uppercase tracking-wider text-launcher-bg shadow-[0_0_20px_var(--color-launcher-glow)] transition-transform hover:scale-[1.01] disabled:opacity-50"
+              className="w-full rounded-xl bg-gradient-to-r from-launcher-accent to-launcher-accent-dim py-3 text-sm font-bold uppercase tracking-wider text-white shadow-[0_4px_20px_var(--color-launcher-glow)] transition-transform hover:scale-[1.01] disabled:opacity-50"
             >
               {submitting ? 'Please wait…' : mode === 'login' ? 'Sign In' : 'Create Account'}
             </button>

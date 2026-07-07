@@ -31,7 +31,7 @@ export default function DownloadCta({
       <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
         <a
           href={DOWNLOAD_CONFIG.downloadUrl}
-          className={`group flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-accent to-accent-dim px-8 py-4 text-sm font-bold uppercase tracking-wider text-bg shadow-[0_0_40px_rgba(0,230,118,0.3)] transition-all hover:scale-[1.02] hover:shadow-[0_0_50px_rgba(0,230,118,0.4)] sm:w-auto ${buttonClassName}`}
+          className={`group wave-button flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-accent to-accent-dim px-8 py-4 text-sm font-bold uppercase tracking-wider text-white shadow-[0_4px_30px_rgba(43,159,212,0.3)] transition-all hover:scale-[1.02] hover:shadow-[0_6px_40px_rgba(43,159,212,0.35)] sm:w-auto ${buttonClassName}`}
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
             <path
@@ -57,10 +57,10 @@ export default function DownloadCta({
 
       {showNonWindowsNote ? (
         <p
-          className="mt-3 max-w-md text-xs leading-relaxed text-amber-200/90"
+          className="mt-3 max-w-md text-xs leading-relaxed text-amber-700"
           role="status"
         >
-          <span className="font-semibold text-amber-100">Not on Windows?</span>{' '}
+          <span className="font-semibold text-amber-800">Not on Windows?</span>{' '}
           {SITE.name} is Windows-only. You can still download the installer to copy onto a PC.
         </p>
       ) : (

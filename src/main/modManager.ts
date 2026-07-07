@@ -72,7 +72,7 @@ function getManifestPath(modId: string): string {
   return join(getModDir(modId), MANIFEST_FILE)
 }
 
-function readManifest(modId: string): ModManifest | null {
+export function readManifest(modId: string): ModManifest | null {
   const manifestPath = getManifestPath(modId)
   if (!existsSync(manifestPath)) {
     return null
@@ -500,12 +500,27 @@ export async function deleteMod(modId: string): Promise<OperationResult> {
 
   try {
     rmSync(getModDir(modId), { recursive: true, force: true })
+    const { removeModFromAllProfiles } = await import('./modProfileManager')
+    removeModFromAllProfiles(modId)
     broadcastModsChanged()
     return { success: true }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     return { success: false, error: `Failed to delete mod: ${message}` }
   }
+}
+
+export async function undeployAllMods(): Promise<OperationResult> {
+  for (const modId of listModIds()) {
+    const manifest = readManifest(modId)
+    if (manifest?.enabled) {
+      const result = await disableMod(modId)
+      if (!result.success) {
+        return result
+      }
+    }
+  }
+  return { success: true }
 }
 
 function broadcastModsChanged(): void {

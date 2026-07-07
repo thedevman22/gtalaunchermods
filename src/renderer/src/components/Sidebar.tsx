@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { NavItem } from '@renderer/types/navigation'
+import ModHarborLogo from '@renderer/components/ModHarborLogo'
 
 interface SidebarProps {
   active: NavItem
@@ -27,18 +28,16 @@ export default function Sidebar({ active, onNavigate }: SidebarProps): React.JSX
   }, [])
 
   return (
-    <aside className="flex w-56 shrink-0 flex-col border-r border-launcher-border bg-launcher-surface/80 backdrop-blur-xl">
+    <aside className="flex w-56 shrink-0 flex-col border-r border-launcher-border bg-launcher-surface/90 backdrop-blur-xl">
       <div className="border-b border-launcher-border px-5 py-6">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-launcher-accent to-launcher-accent-dim shadow-[0_0_20px_var(--color-launcher-glow)]">
-            <span className="text-lg font-black text-launcher-bg">G</span>
-          </div>
+          <ModHarborLogo size={40} className="shrink-0 shadow-[0_4px_16px_rgba(43,159,212,0.25)]" />
           <div>
             <h1 className="font-display text-sm font-bold tracking-wide text-launcher-text">
-              GTA MOD
+              ModHarbor
             </h1>
             <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-launcher-accent">
-              Launcher
+              Mod launcher
             </p>
           </div>
         </div>

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Geist, Geist_Mono, Outfit } from 'next/font/google'
 import './globals.css'
 import { SITE } from '@/lib/constants'
 import Providers from '@/components/Providers'
@@ -15,8 +15,14 @@ const geistMono = Geist_Mono({
   subsets: ['latin']
 })
 
+const outfit = Outfit({
+  variable: '--font-outfit',
+  subsets: ['latin'],
+  weight: ['500', '600', '700', '800']
+})
+
 export const metadata: Metadata = {
-  title: `${SITE.name} — Free GTA V Story Mode Mod Launcher`,
+  title: `${SITE.name} — Free Story Mode Mod Launcher`,
   description: SITE.description,
   openGraph: {
     title: SITE.name,
@@ -31,7 +37,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full`}>
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable} h-full`}>
       <body className="min-h-full antialiased">
         <Providers>
           <Navbar />

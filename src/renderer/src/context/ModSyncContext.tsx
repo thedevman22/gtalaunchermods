@@ -9,7 +9,7 @@ import {
   type ReactNode
 } from 'react'
 import type { CatalogMod } from '../../../shared/catalog'
-import type { MissingCloudMod, ModReconcileResult } from '../../../shared/sync'
+import type { MissingCloudMod, ModReconcileResult, UserPreferences } from '../../../shared/sync'
 import { DEFAULT_GAME_ID } from '../../../shared/games'
 import { useAuth } from '@renderer/context/AuthContext'
 import { isOfflineDevMode } from '@renderer/lib/supabase'
@@ -113,12 +113,23 @@ export function ModSyncProvider({ children }: { children: ReactNode }): React.JS
       if (profile?.sync_preferences_enabled) {
         await applySyncedPreferences({
           theme_preference: profile.theme_preference,
-          default_install_path: profile.default_install_path
+          default_install_path: profile.default_install_path,
+          game_id: profile.game_id as UserPreferences['game_id'],
+          game_edition: profile.game_edition as UserPreferences['game_edition']
         })
       }
       await reconcile()
     })()
-  }, [user, isOfflineDev, profile?.sync_preferences_enabled, profile?.theme_preference, profile?.default_install_path, reconcile])
+  }, [
+    user,
+    isOfflineDev,
+    profile?.sync_preferences_enabled,
+    profile?.theme_preference,
+    profile?.default_install_path,
+    profile?.game_id,
+    profile?.game_edition,
+    reconcile
+  ])
 
   const syncModInstalled = useCallback(
     async (catalogModId: string, enabled = false): Promise<void> => {
