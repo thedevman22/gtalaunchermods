@@ -44,7 +44,8 @@ nsis:
   installerIcon: build/icon.ico
   uninstallerIcon: build/icon.ico
   installerHeaderIcon: build/icon.ico
-  artifactName: ModHarbor-${version}-setup.${ext}
+  # Stable (unversioned) name so the site can always link releases/latest/download.
+  artifactName: ModHarbor-Setup.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
