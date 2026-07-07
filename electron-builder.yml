@@ -30,7 +30,7 @@ win:
   #   CSC_LINK          path to .pfx or base64-encoded certificate
   #   CSC_KEY_PASSWORD  certificate password
   # Optional Windows-specific overrides: WIN_CSC_LINK, WIN_CSC_KEY_PASSWORD
-  signAndEditExecutable: true
+  signAndEditExecutable: false
   signtoolOptions:
     signingHashAlgorithms:
       - sha256

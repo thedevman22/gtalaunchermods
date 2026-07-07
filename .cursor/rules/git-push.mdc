@@ -1,39 +1,73 @@
 ---
-description: When the user says push or push all changes, commit and push to GitHub automatically
+description: When the user says push or push changes, commit, bump version, publish app + website
 alwaysApply: true
 ---
 
-# Git push on request
+# Push changes — app + website
 
-When the user says **"push"**, **"push all changes"**, **"push to github"**, or similar, treat it as an explicit request to **commit (if needed) and push to GitHub**.
+When the user says **"push"**, **"push changes"**, **"push all changes"**, or similar, treat it as a request to **ship everything**: commit, bump the desktop app version, push to GitHub, and trigger both the **website** (Vercel) and **Windows installer** (GitHub Actions + auto-update).
 
 ## Required workflow
 
-Run these in parallel first:
+Run in parallel first:
 
 - `git status`
 - `git diff` (staged and unstaged)
 - `git log -3 --oneline`
-- `git branch -vv` (confirm tracking branch)
+- `git branch -vv`
 
 Then:
 
-1. **Stage** all relevant changes (`git add -A` or targeted adds). Never stage `.env`, `.env.local`, credentials, or other secrets.
-2. **Commit** only if there are staged or unstaged changes worth committing. Use a concise 1–2 sentence message focused on *why*. Pass the message via HEREDOC.
-3. **Push** to the current branch: `git push -u origin HEAD` (use `-u` if upstream is missing).
-4. **Verify** with `git status` and report the commit hash and remote URL.
+### 1. Bump version (when app code changed)
 
-## Do not
+If the diff touches any of `src/`, `resources/`, `package.json`, `electron-builder.yml`, or `electron.vite.config.ts`:
 
-- Skip the push — the user asked to push, not only commit.
-- Use destructive git commands (`push --force`, `reset --hard`, etc.) unless explicitly requested.
-- Update git config.
-- Push `.env` or secret files — warn if the user tried to include them.
+```bash
+npm run version:bump
+```
+
+This bumps `package.json` and `landing/src/config/download.ts` together.
+
+If **only** `landing/` changed (no app files), manually sync `landing/src/config/download.ts` `VERSION` with `package.json` if needed.
+
+### 2. Stage, commit, push
+
+- Stage all relevant files. **Never** stage `.env`, `.env.local`, or secrets.
+- Commit with a concise message (HEREDOC).
+- `git push -u origin HEAD`
+
+### 3. Tag the release
+
+After push, create and push a version tag (required for auto-update metadata):
+
+```bash
+VERSION=$(node -p "require('./package.json').version")
+git tag -f "v${VERSION}"
+git push origin "v${VERSION}" --force
+```
+
+Use `--force` on the tag only when re-pushing the same version after a failed CI build.
+
+### 4. Verify
+
+- `git status` — clean, up to date with `origin/main`
+- Report commit hash, version, and tag pushed
+- Tell the user:
+  - **Website**: Vercel redeploys automatically from `main` (landing in `landing/out`)
+  - **Desktop app**: GitHub Actions workflow **Deploy app release** builds the `.exe` and publishes to Releases; installed apps auto-update via `electron-updater`
 
 ## If nothing to commit
 
-If the working tree is clean, still run `git push` in case local commits are unpushed, then confirm everything is up to date with `origin`.
+Still push unpushed commits, bump version only if there are uncommitted app changes, then tag and push tag if release is missing.
 
-## If push fails
+## Do not
 
-Diagnose (auth, rejected, hooks), fix if possible, and retry. Do not stop after a single failure.
+- Skip version bump when app source changed.
+- Skip `git push` or tag push.
+- Use destructive git except `git push origin vX.Y.Z --force` for retrying a failed release tag.
+- Update git config.
+
+## Local dev vs installed app
+
+- `npm run dev` always shows latest local code immediately.
+- Installed `.exe` users only get changes after GitHub Actions publishes a new release.

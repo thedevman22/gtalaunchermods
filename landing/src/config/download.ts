@@ -2,7 +2,7 @@
  * Release metadata for the Windows installer.
  * Update `version` when shipping a new build (keep in sync with root package.json).
  */
-const VERSION = '1.0.1'
+const VERSION = '1.0.2'
 
 const GITHUB_OWNER = 'thedevman22'
 const GITHUB_REPO = 'gtalaunchermods'
