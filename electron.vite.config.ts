@@ -17,6 +17,9 @@ export default defineConfig({
     }
   },
   renderer: {
+    // Load VITE_* from project-root .env (dev) or process.env (CI build) and inline at compile time.
+    envDir: resolve('.'),
+    envPrefix: 'VITE_',
     resolve: {
       alias: {
         '@renderer': resolve('src/renderer/src')
