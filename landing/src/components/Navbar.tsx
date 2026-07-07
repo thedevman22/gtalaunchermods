@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { SITE } from '@/lib/constants'
+import NavbarAuth from '@/components/NavbarAuth'
 
 export default function Navbar(): React.JSX.Element {
   return (
@@ -13,6 +14,9 @@ export default function Navbar(): React.JSX.Element {
         </Link>
 
         <nav className="hidden items-center gap-8 text-sm text-muted md:flex">
+          <a href="#how-it-works" className="transition-colors hover:text-text">
+            How It Works
+          </a>
           <a href="#features" className="transition-colors hover:text-text">
             Features
           </a>
@@ -27,12 +31,7 @@ export default function Navbar(): React.JSX.Element {
           </a>
         </nav>
 
-        <a
-          href={SITE.downloadUrl}
-          className="rounded-lg bg-gradient-to-r from-accent to-accent-dim px-4 py-2 text-xs font-bold uppercase tracking-wider text-bg shadow-[0_0_20px_rgba(0,230,118,0.2)] transition-transform hover:scale-[1.02]"
-        >
-          Download
-        </a>
+        <NavbarAuth />
       </div>
     </header>
   )

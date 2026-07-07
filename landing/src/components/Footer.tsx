@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { SITE } from '@/lib/constants'
+import ScrollReveal from '@/components/ScrollReveal'
 
 const INSTALL_STEPS = [
   'Download the Windows installer (.exe)',
@@ -13,7 +14,7 @@ export default function InstallSection(): React.JSX.Element {
   return (
     <section id="install" className="border-t border-border/60 px-4 py-20 sm:px-6 lg:py-28">
       <div className="mx-auto max-w-6xl">
-        <div className="grid gap-12 lg:grid-cols-2 lg:items-start">
+        <ScrollReveal className="grid gap-12 lg:grid-cols-2 lg:items-start">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.25em] text-accent">
               Install guide
@@ -44,7 +45,7 @@ export default function InstallSection(): React.JSX.Element {
               </li>
             ))}
           </ol>
-        </div>
+        </ScrollReveal>
       </div>
     </section>
   )
@@ -70,6 +71,11 @@ export function Footer(): React.JSX.Element {
               <h4 className="text-xs font-bold uppercase tracking-wider text-muted">Product</h4>
               <ul className="mt-3 space-y-2 text-sm">
                 <li>
+                  <a href="#how-it-works" className="text-muted transition-colors hover:text-text">
+                    How It Works
+                  </a>
+                </li>
+                <li>
                   <a href="#features" className="text-muted transition-colors hover:text-text">
                     Features
                   </a>
@@ -83,6 +89,21 @@ export function Footer(): React.JSX.Element {
                   <a href={SITE.downloadUrl} className="text-muted transition-colors hover:text-text">
                     Download
                   </a>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-muted">Account</h4>
+              <ul className="mt-3 space-y-2 text-sm">
+                <li>
+                  <Link href="/sign-in" className="text-muted transition-colors hover:text-text">
+                    Sign In
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/sign-up" className="text-muted transition-colors hover:text-text">
+                    Sign Up
+                  </Link>
                 </li>
               </ul>
             </div>

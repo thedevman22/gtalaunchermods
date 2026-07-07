@@ -15,6 +15,7 @@ export interface ModManifest {
   enabled: boolean
   importedAt: string
   deployedFiles: ModDeployedFile[]
+  catalogId?: string
 }
 
 export interface ModSummary {
@@ -26,6 +27,15 @@ export interface ModSummary {
   enabled: boolean
   importedAt: string
   thumbnailDataUrl?: string
+  catalogId?: string
+}
+
+export interface ModImportOptions {
+  catalogId?: string
+  name?: string
+  author?: string
+  version?: string
+  description?: string
 }
 
 export interface ModImportResult {

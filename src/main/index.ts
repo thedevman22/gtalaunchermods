@@ -5,6 +5,7 @@ import icon from '../../resources/icon.png?asset'
 import { registerGameLauncherIpc } from './gameLauncher'
 import { registerModManagerIpc } from './modManager'
 import { registerAuthBridgeIpc } from './authBridge'
+import { registerCatalogIpc } from './catalogManager'
 import { registerDependencyManagerIpc } from './dependencyManager'
 
 function createWindow(): void {
@@ -48,6 +49,7 @@ app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.gtamodlauncher.app')
   registerGameLauncherIpc()
   registerModManagerIpc()
+  registerCatalogIpc()
   registerAuthBridgeIpc()
   registerDependencyManagerIpc()
 

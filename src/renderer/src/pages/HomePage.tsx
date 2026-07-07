@@ -1,4 +1,29 @@
+import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
+import LiquidBlobBackground from '@renderer/components/LiquidBlobBackground'
+import MotionButton from '@renderer/components/MotionButton'
+import { useLaunch } from '@renderer/context/LaunchContext'
+import { MOTION_DURATION, MOTION_EASE, staggerContainer, staggerItem } from '@renderer/lib/motion'
+
 export default function HomePage(): React.JSX.Element {
+  const { isLaunching, startLaunch } = useLaunch()
+  const [modStats, setModStats] = useState({ total: 0, enabled: 0 })
+
+  useEffect(() => {
+    void window.api.mods.list().then((result) => {
+      setModStats({
+        total: result.mods.length,
+        enabled: result.mods.filter((mod) => mod.enabled).length
+      })
+    })
+    return window.api.mods.onChanged((result) => {
+      setModStats({
+        total: result.mods.length,
+        enabled: result.mods.filter((mod) => mod.enabled).length
+      })
+    })
+  }, [])
+
   return (
     <div className="space-y-6">
       <header>
@@ -9,39 +34,51 @@ export default function HomePage(): React.JSX.Element {
           Grand Theft Auto V
         </h2>
         <p className="mt-2 max-w-xl text-sm text-launcher-muted">
-          Your modded session is configured and ready. Select a profile or jump straight into the
-          game.
+          Your modded session is configured and ready. Jump into story mode with offline-safe
+          launch.
         </p>
       </header>
 
       <div className="relative overflow-hidden rounded-2xl border border-launcher-border bg-launcher-elevated">
+        <LiquidBlobBackground />
         <div className="absolute inset-0 bg-gradient-to-r from-launcher-accent/5 via-transparent to-launcher-warning/5" />
-        <div className="relative flex items-center justify-between gap-6 p-8">
+        <div className="relative z-10 flex items-center justify-between gap-6 p-8">
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-launcher-accent/30 bg-launcher-accent/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-launcher-accent">
               <span className="h-1.5 w-1.5 rounded-full bg-launcher-accent" />
-              Enhanced Edition
+              Story mode · Offline
             </span>
             <h3 className="mt-3 text-xl font-bold text-launcher-text">Los Santos — Mod Profile</h3>
-            <p className="mt-1 text-sm text-launcher-muted">12 mods active · Last played 2 days ago</p>
+            <p className="mt-1 text-sm text-launcher-muted">
+              {modStats.enabled} mod{modStats.enabled === 1 ? '' : 's'} active · {modStats.total}{' '}
+              installed
+            </p>
           </div>
-          <button
-            type="button"
-            className="shrink-0 rounded-xl bg-gradient-to-r from-launcher-accent to-launcher-accent-dim px-8 py-3.5 text-sm font-bold uppercase tracking-wider text-launcher-bg shadow-[0_0_30px_var(--color-launcher-glow)] transition-transform hover:scale-[1.02] active:scale-[0.98]"
+          <MotionButton
+            disabled={isLaunching}
+            onClick={() => void startLaunch()}
+            className="shrink-0 rounded-xl bg-gradient-to-r from-launcher-accent to-launcher-accent-dim px-8 py-3.5 text-sm font-bold uppercase tracking-wider text-launcher-bg shadow-[0_0_30px_var(--color-launcher-glow)] disabled:opacity-60"
           >
-            Play
-          </button>
+            {isLaunching ? 'Launching…' : 'Play'}
+          </MotionButton>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="show"
+        className="grid grid-cols-3 gap-4"
+      >
         {[
-          { label: 'Installed Mods', value: '24', sub: '3 updates available' },
-          { label: 'Play Time', value: '186h', sub: 'This month: 12h' },
-          { label: 'Profiles', value: '3', sub: '1 active profile' }
+          { label: 'Installed Mods', value: String(modStats.total), sub: `${modStats.enabled} enabled` },
+          { label: 'Launch Mode', value: 'Offline', sub: '-scOfflineOnly enforced' },
+          { label: 'Catalog', value: 'Browse', sub: 'Discover new mods' }
         ].map((stat) => (
-          <div
+          <motion.div
             key={stat.label}
+            variants={staggerItem}
+            whileHover={{ scale: 1.01, transition: { duration: MOTION_DURATION, ease: MOTION_EASE } }}
             className="rounded-xl border border-launcher-border bg-launcher-surface/60 p-5 backdrop-blur-sm"
           >
             <p className="text-xs font-medium uppercase tracking-wider text-launcher-muted">
@@ -49,35 +86,34 @@ export default function HomePage(): React.JSX.Element {
             </p>
             <p className="mt-2 font-display text-2xl font-bold text-launcher-text">{stat.value}</p>
             <p className="mt-1 text-xs text-launcher-muted">{stat.sub}</p>
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       <section>
         <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-launcher-muted">
-          Recent Activity
+          Quick tips
         </h3>
-        <div className="space-y-2">
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          animate="show"
+          className="space-y-2"
+        >
           {[
-            { action: 'Installed', mod: 'NaturalVision Evolved', time: '3 hours ago' },
-            { action: 'Updated', mod: 'Script Hook V', time: 'Yesterday' },
-            { action: 'Enabled', mod: 'LSPDFR', time: '3 days ago' }
-          ].map((entry) => (
-            <div
-              key={entry.mod}
-              className="flex items-center justify-between rounded-lg border border-launcher-border/60 bg-launcher-elevated/40 px-4 py-3"
+            'Mods deploy only when enabled — your GTA folder stays clean.',
+            'Use Settings to sync your install path across devices.',
+            'Complete the Mods setup checklist before your first import.'
+          ].map((tip) => (
+            <motion.div
+              key={tip}
+              variants={staggerItem}
+              className="rounded-lg border border-launcher-border/60 bg-launcher-elevated/40 px-4 py-3 text-sm text-launcher-muted"
             >
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-md bg-launcher-border/50" />
-                <div>
-                  <p className="text-sm font-medium text-launcher-text">{entry.mod}</p>
-                  <p className="text-xs text-launcher-muted">{entry.action}</p>
-                </div>
-              </div>
-              <span className="text-xs text-launcher-muted">{entry.time}</span>
-            </div>
+              {tip}
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </section>
     </div>
   )

@@ -1,4 +1,5 @@
 import { COMPARISON_ROWS, PRICING_TIERS, SITE } from '@/lib/constants'
+import ScrollReveal from '@/components/ScrollReveal'
 
 function Check({ on }: { on: boolean }): React.JSX.Element {
   return on ? (
@@ -16,7 +17,7 @@ export default function Pricing(): React.JSX.Element {
   return (
     <section id="pricing" className="border-t border-border/60 px-4 py-20 sm:px-6 lg:py-28">
       <div className="mx-auto max-w-6xl">
-        <div className="mx-auto max-w-2xl text-center">
+        <ScrollReveal className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.25em] text-accent">Pricing</p>
           <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
             Launcher tiers, not mod paywalls
@@ -24,9 +25,9 @@ export default function Pricing(): React.JSX.Element {
           <p className="mt-4 text-muted">
             Pay for convenience features in the launcher. Every mod you download stays free.
           </p>
-        </div>
+        </ScrollReveal>
 
-        <div className="mt-16 grid gap-6 lg:grid-cols-3">
+        <ScrollReveal delay={0.06} className="mt-16 grid gap-6 lg:grid-cols-3">
           {PRICING_TIERS.map((tier) => (
             <article
               key={tier.id}
@@ -79,9 +80,9 @@ export default function Pricing(): React.JSX.Element {
               </a>
             </article>
           ))}
-        </div>
+        </ScrollReveal>
 
-        <div className="mt-16 overflow-hidden rounded-2xl border border-border">
+        <ScrollReveal delay={0.1} className="mt-16 overflow-hidden rounded-2xl border border-border">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[560px] text-left text-sm">
               <thead>
@@ -110,7 +111,7 @@ export default function Pricing(): React.JSX.Element {
               </tbody>
             </table>
           </div>
-        </div>
+        </ScrollReveal>
       </div>
     </section>
   )

@@ -19,7 +19,10 @@ export const OFFLINE_DEV_PROFILE: UserProfile = {
   email: 'dev@local',
   subscription_tier: 'free',
   role_badge: 'Free Member',
-  created_at: new Date().toISOString()
+  created_at: new Date().toISOString(),
+  sync_preferences_enabled: false,
+  theme_preference: 'dark',
+  default_install_path: null
 }
 
 export const supabase = isSupabaseConfigured
@@ -40,7 +43,12 @@ export async function fetchUserProfile(userId: string, email: string): Promise<U
   const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle()
 
   if (data) {
-    return data as UserProfile
+    return {
+      ...(data as UserProfile),
+      sync_preferences_enabled: Boolean((data as UserProfile).sync_preferences_enabled ?? false),
+      theme_preference: ((data as UserProfile).theme_preference ?? 'dark') as UserProfile['theme_preference'],
+      default_install_path: (data as UserProfile).default_install_path ?? null
+    }
   }
 
   if (error) {
@@ -53,7 +61,10 @@ export async function fetchUserProfile(userId: string, email: string): Promise<U
       id: userId,
       email,
       subscription_tier: 'free',
-      role_badge: 'Free Member'
+      role_badge: 'Free Member',
+      sync_preferences_enabled: false,
+      theme_preference: 'dark',
+      default_install_path: null
     })
     .select('*')
     .single()

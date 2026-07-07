@@ -7,12 +7,14 @@ import type {
 } from '../shared/game'
 import type { ModImportResult, ModListResult, ModSummary } from '../shared/mods'
 import type { OAuthCallbackInfo } from '../shared/profile'
+import type { CatalogResult } from '../shared/catalog'
 import type { DependencyId, SetupStatus } from '../shared/dependencies'
 
 export type { LaunchStatus, GamePathSource } from '../shared/game'
 export type { ModSummary, ModListResult, ModImportResult } from '../shared/mods'
-export type { SubscriptionTier, UserProfile, OAuthCallbackInfo } from '../shared/profile'
+export type { SubscriptionTier, UserProfile, ThemePreference, OAuthCallbackInfo } from '../shared/profile'
 export type { SetupStatus, DependencyId } from '../shared/dependencies'
+export type { CatalogMod, ModCategory, ModCatalogSource, CatalogResult } from '../shared/catalog'
 
 export interface GameAPI {
   getPath: () => Promise<GamePathInfo>
@@ -49,10 +51,17 @@ export interface SetupAPI {
   onOpenChecklist: (callback: () => void) => () => void
 }
 
+export interface CatalogAPI {
+  getMods: () => Promise<CatalogResult>
+  install: (catalogId: string) => Promise<ModImportResult>
+  getInstalledMap: () => Promise<Record<string, string>>
+}
+
 export interface LauncherAPI {
   platform: NodeJS.Platform
   game: GameAPI
   mods: ModsAPI
+  catalog: CatalogAPI
   auth: AuthAPI
   setup: SetupAPI
 }

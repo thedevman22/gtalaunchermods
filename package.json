@@ -26,7 +26,8 @@
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
     "@supabase/supabase-js": "^2.110.0",
-    "adm-zip": "^0.5.18"
+    "adm-zip": "^0.5.18",
+    "framer-motion": "^12.42.2"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",

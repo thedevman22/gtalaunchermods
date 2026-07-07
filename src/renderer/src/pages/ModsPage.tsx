@@ -1,112 +1,112 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import ModCard from '@renderer/components/ModCard'
-import ModDropZone from '@renderer/components/ModDropZone'
+import { motion } from 'framer-motion'
+import CatalogModCard from '@renderer/components/CatalogModCard'
+import CatalogSidebar from '@renderer/components/CatalogSidebar'
+import InstalledModRow from '@renderer/components/InstalledModRow'
+import MissingModsDialog from '@renderer/components/MissingModsDialog'
+import MotionButton from '@renderer/components/MotionButton'
 import SetupChecklist from '@renderer/components/SetupChecklist'
-import UpgradePrompt from '@renderer/components/UpgradePrompt'
-import { useAuth } from '@renderer/context/AuthContext'
+import { useModSync } from '@renderer/context/ModSyncContext'
+import { staggerContainer } from '@renderer/lib/motion'
+import type { CatalogMod, ModCategory } from '../../../shared/catalog'
 import type { ModSummary } from '../../../preload/index.d'
 import type { SetupStatus } from '../../../shared/dependencies'
 
-type Filter = 'all' | 'enabled' | 'disabled'
+type ModsTab = 'browse' | 'my-mods'
 
 interface ModsPageProps {
-  onNavigateToAccount?: () => void
   onNavigateSettings?: () => void
 }
 
-export default function ModsPage({
-  onNavigateToAccount,
-  onNavigateSettings
-}: ModsPageProps): React.JSX.Element {
-  const { isPremium } = useAuth()
+export default function ModsPage({ onNavigateSettings }: ModsPageProps): React.JSX.Element {
+  const {
+    missingMods,
+    reconciling,
+    syncModInstalled,
+    syncModEnabled,
+    syncModRemoved,
+    downloadMissingMod,
+    downloadAllMissing,
+    dismissMissingMods
+  } = useModSync()
   const [setupStatus, setSetupStatus] = useState<SetupStatus | null>(null)
-  const [mods, setMods] = useState<ModSummary[]>([])
-  const [libraryPath, setLibraryPath] = useState('')
-  const [filter, setFilter] = useState<Filter>('all')
+  const [activeTab, setActiveTab] = useState<ModsTab>('browse')
+  const [catalogMods, setCatalogMods] = useState<CatalogMod[]>([])
+  const [installedMods, setInstalledMods] = useState<ModSummary[]>([])
+  const [installedMap, setInstalledMap] = useState<Record<string, string>>({})
+  const [activeCategory, setActiveCategory] = useState<ModCategory | 'all'>('all')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [busyCatalogId, setBusyCatalogId] = useState<string | null>(null)
   const [busyModId, setBusyModId] = useState<string | null>(null)
   const [importing, setImporting] = useState(false)
-  const [batchBusy, setBatchBusy] = useState(false)
-  const [autoInstall, setAutoInstall] = useState(false)
+  const [syncBusy, setSyncBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const loadMods = useCallback(async (): Promise<void> => {
-    const result = await window.api.mods.list()
-    setMods(result.mods)
-    setLibraryPath(result.libraryPath)
+  const loadSetup = useCallback(async (): Promise<void> => {
+    setSetupStatus(await window.api.setup.getStatus())
   }, [])
 
-  const loadSetup = useCallback(async (): Promise<void> => {
-    const status = await window.api.setup.getStatus()
-    setSetupStatus(status)
+  const loadCatalog = useCallback(async (): Promise<void> => {
+    const [catalog, map, library] = await Promise.all([
+      window.api.catalog.getMods(),
+      window.api.catalog.getInstalledMap(),
+      window.api.mods.list()
+    ])
+    setCatalogMods(catalog.mods)
+    setInstalledMap(map)
+    setInstalledMods(library.mods)
   }, [])
 
   useEffect(() => {
     void loadSetup()
-    const unsubscribe = window.api.setup.onChanged(setSetupStatus)
-    return unsubscribe
+    return window.api.setup.onChanged(setSetupStatus)
   }, [loadSetup])
 
   useEffect(() => {
     if (!setupStatus?.modsAllowed) return
-    void loadMods()
-    const unsubscribe = window.api.mods.onChanged((payload) => {
-      setMods(payload.mods)
-      setLibraryPath(payload.libraryPath)
+    void loadCatalog()
+    return window.api.mods.onChanged((payload) => {
+      setInstalledMods(payload.mods)
+      void window.api.catalog.getInstalledMap().then(setInstalledMap)
     })
-    return unsubscribe
-  }, [loadMods, setupStatus?.modsAllowed])
+  }, [loadCatalog, setupStatus?.modsAllowed])
 
-  const filteredMods = useMemo(() => {
-    if (filter === 'enabled') return mods.filter((mod) => mod.enabled)
-    if (filter === 'disabled') return mods.filter((mod) => !mod.enabled)
-    return mods
-  }, [filter, mods])
+  const modById = useMemo(() => {
+    return new Map(installedMods.map((mod) => [mod.id, mod]))
+  }, [installedMods])
 
-  const handleImport = async (zipPath: string, withAutoInstall = false): Promise<void> => {
-    setImporting(true)
+  const filteredCatalog = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase()
+    return catalogMods.filter((mod) => {
+      if (activeCategory !== 'all' && mod.category !== activeCategory) {
+        return false
+      }
+      if (!query) {
+        return true
+      }
+      return (
+        mod.name.toLowerCase().includes(query) ||
+        mod.author.toLowerCase().includes(query) ||
+        mod.description.toLowerCase().includes(query)
+      )
+    })
+  }, [activeCategory, catalogMods, searchQuery])
+
+  const handleCatalogInstall = async (catalogId: string): Promise<void> => {
+    setBusyCatalogId(catalogId)
     setError(null)
     try {
-      const result = await window.api.mods.importMod(zipPath)
+      const result = await window.api.catalog.install(catalogId)
       if (!result.success) {
-        setError(result.error ?? 'Failed to import mod.')
+        setError(result.error ?? 'Install failed.')
         return
       }
-
-      if (withAutoInstall && result.mod) {
-        const enableResult = await window.api.mods.enableMod(result.mod.id)
-        if (!enableResult.success) {
-          setError(enableResult.error ?? 'Imported but auto-install failed.')
-        }
+      if (result.mod?.catalogId) {
+        await syncModInstalled(result.mod.catalogId, result.mod.enabled)
       }
-
-      await loadMods()
+      await loadCatalog()
     } finally {
-      setImporting(false)
-    }
-  }
-
-  const handleBrowseImport = async (): Promise<void> => {
-    setImporting(true)
-    setError(null)
-    try {
-      const result = await window.api.mods.browseImport()
-      if (!result.success) {
-        if (result.error && result.error !== 'Import canceled.') {
-          setError(result.error)
-        }
-        return
-      }
-
-      if (autoInstall && isPremium && result.mod) {
-        const enableResult = await window.api.mods.enableMod(result.mod.id)
-        if (!enableResult.success) {
-          setError(enableResult.error ?? 'Imported but auto-install failed.')
-        }
-      }
-
-      await loadMods()
-    } finally {
-      setImporting(false)
+      setBusyCatalogId(null)
     }
   }
 
@@ -114,6 +114,7 @@ export default function ModsPage({
     setBusyModId(modId)
     setError(null)
     try {
+      const mod = modById.get(modId)
       const result = enabled
         ? await window.api.mods.enableMod(modId)
         : await window.api.mods.disableMod(modId)
@@ -121,18 +122,19 @@ export default function ModsPage({
         setError(result.error ?? 'Failed to update mod.')
         return
       }
-      await loadMods()
+      if (mod?.catalogId) {
+        await syncModEnabled(mod.catalogId, enabled)
+      }
+      await loadCatalog()
     } finally {
       setBusyModId(null)
     }
   }
 
   const handleDelete = async (modId: string): Promise<void> => {
-    const mod = mods.find((entry) => entry.id === modId)
+    const mod = modById.get(modId)
     if (!mod) return
-
-    const confirmed = window.confirm(`Delete "${mod.name}" from your mod library?`)
-    if (!confirmed) return
+    if (!window.confirm(`Delete "${mod.name}" from your library?`)) return
 
     setBusyModId(modId)
     setError(null)
@@ -142,48 +144,27 @@ export default function ModsPage({
         setError(result.error ?? 'Failed to delete mod.')
         return
       }
-      await loadMods()
+      if (mod.catalogId) {
+        await syncModRemoved(mod.catalogId)
+      }
+      await loadCatalog()
     } finally {
       setBusyModId(null)
     }
   }
 
-  const handleBatchEnable = async (): Promise<void> => {
-    setBatchBusy(true)
+  const handleBrowseImport = async (): Promise<void> => {
+    setImporting(true)
     setError(null)
     try {
-      for (const mod of mods.filter((entry) => !entry.enabled)) {
-        const result = await window.api.mods.enableMod(mod.id)
-        if (!result.success) {
-          setError(result.error ?? `Failed to enable ${mod.name}.`)
-          break
-        }
+      const result = await window.api.mods.browseImport()
+      if (!result.success && result.error && result.error !== 'Import canceled.') {
+        setError(result.error)
       }
-      await loadMods()
+      await loadCatalog()
     } finally {
-      setBatchBusy(false)
+      setImporting(false)
     }
-  }
-
-  const handleBatchDisable = async (): Promise<void> => {
-    setBatchBusy(true)
-    setError(null)
-    try {
-      for (const mod of mods.filter((entry) => entry.enabled)) {
-        const result = await window.api.mods.disableMod(mod.id)
-        if (!result.success) {
-          setError(result.error ?? `Failed to disable ${mod.name}.`)
-          break
-        }
-      }
-      await loadMods()
-    } finally {
-      setBatchBusy(false)
-    }
-  }
-
-  const handleDropImport = async (zipPath: string): Promise<void> => {
-    await handleImport(zipPath, autoInstall && isPremium)
   }
 
   if (!setupStatus) {
@@ -204,113 +185,166 @@ export default function ModsPage({
   }
 
   return (
-    <div className="space-y-6">
-      <header>
-        <h2 className="font-display text-2xl font-bold text-launcher-text">Mods</h2>
-        <p className="mt-1 text-sm text-launcher-muted">
-          Import mod archives into your library, then enable them to deploy into GTA V.
-        </p>
-        {libraryPath && (
-          <p className="mt-2 font-mono text-[10px] text-launcher-muted/70">Library: {libraryPath}</p>
+    <div className="-m-6 flex h-[calc(100%+3rem)] min-h-0 flex-col">
+      <MissingModsDialog
+        mods={missingMods}
+        busy={syncBusy || reconciling}
+        onDownloadAll={() => {
+          setSyncBusy(true)
+          void downloadAllMissing()
+            .catch((err) => setError(err instanceof Error ? err.message : 'Download failed.'))
+            .finally(() => {
+              setSyncBusy(false)
+              void loadCatalog()
+            })
+        }}
+        onDownloadOne={(modId) => {
+          setSyncBusy(true)
+          void downloadMissingMod(modId)
+            .catch((err) => setError(err instanceof Error ? err.message : 'Download failed.'))
+            .finally(() => {
+              setSyncBusy(false)
+              void loadCatalog()
+            })
+        }}
+        onDismiss={dismissMissingMods}
+      />
+      <header className="shrink-0 border-b border-launcher-border/60 bg-launcher-bg/80 px-6 py-4 backdrop-blur-sm">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="font-display text-2xl font-bold text-launcher-text">Mod Catalog</h2>
+            <p className="mt-1 text-sm text-launcher-muted">
+              Browse curated story-mode mods or manage your installed library.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 rounded-xl border border-launcher-border bg-launcher-elevated/60 p-1">
+            {(
+              [
+                ['browse', 'Browse'],
+                ['my-mods', 'My Mods']
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setActiveTab(id)}
+                className={[
+                  'rounded-lg px-4 py-2 text-xs font-bold uppercase tracking-wider transition-all',
+                  activeTab === id
+                    ? 'bg-launcher-accent/15 text-launcher-accent shadow-[inset_0_0_0_1px_rgba(0,230,118,0.2)]'
+                    : 'text-launcher-muted hover:text-launcher-text'
+                ].join(' ')}
+              >
+                {label}
+                {id === 'my-mods' && installedMods.length > 0 ? (
+                  <span className="ml-2 rounded-full bg-launcher-accent/20 px-1.5 py-0.5 text-[10px]">
+                    {installedMods.length}
+                  </span>
+                ) : null}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {error && (
+          <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+            {error}
+          </div>
         )}
       </header>
 
-      <ModDropZone
-        busy={importing}
-        onImport={handleDropImport}
-        onBrowse={handleBrowseImport}
-        autoInstall={autoInstall}
-        onAutoInstallChange={setAutoInstall}
-        isPremium={isPremium}
-        onUpgrade={onNavigateToAccount}
-      />
+      {activeTab === 'browse' ? (
+        <div className="flex min-h-0 flex-1">
+          <CatalogSidebar
+            activeCategory={activeCategory}
+            searchQuery={searchQuery}
+            onCategoryChange={setActiveCategory}
+            onSearchChange={setSearchQuery}
+            resultCount={filteredCatalog.length}
+          />
 
-      {error && (
-        <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-          {error}
-        </div>
-      )}
-
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex gap-2">
-          {(
-            [
-              ['all', 'All'],
-              ['enabled', 'Enabled'],
-              ['disabled', 'Disabled']
-            ] as const
-          ).map(([id, label]) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setFilter(id)}
-              className={[
-                'rounded-lg px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors',
-                filter === id
-                  ? 'bg-launcher-accent/15 text-launcher-accent'
-                  : 'text-launcher-muted hover:bg-launcher-elevated hover:text-launcher-text'
-              ].join(' ')}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          {isPremium ? (
-            <>
-              <button
-                type="button"
-                disabled={batchBusy || importing || mods.every((mod) => mod.enabled)}
-                onClick={() => void handleBatchEnable()}
-                className="rounded-lg border border-launcher-accent/40 bg-launcher-accent/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-launcher-accent transition-colors hover:bg-launcher-accent/20 disabled:opacity-50"
-              >
-                Enable All
-              </button>
-              <button
-                type="button"
-                disabled={batchBusy || importing || mods.every((mod) => !mod.enabled)}
-                onClick={() => void handleBatchDisable()}
-                className="rounded-lg border border-launcher-border px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-launcher-muted transition-colors hover:border-launcher-accent/40 hover:text-launcher-accent disabled:opacity-50"
-              >
-                Disable All
-              </button>
-            </>
-          ) : (
-            <UpgradePrompt feature="Batch enable / disable" onUpgrade={onNavigateToAccount} compact />
-          )}
-          <span className="text-xs text-launcher-muted">
-            {filteredMods.length} mod{filteredMods.length === 1 ? '' : 's'}
-          </span>
-        </div>
-      </div>
-
-      {!isPremium && mods.length > 0 && (
-        <UpgradePrompt
-          feature="Unlock one-click auto-install and batch mod controls"
-          onUpgrade={onNavigateToAccount}
-        />
-      )}
-
-      {filteredMods.length === 0 ? (
-        <div className="rounded-xl border border-launcher-border bg-launcher-surface/40 px-6 py-12 text-center">
-          <p className="text-sm text-launcher-muted">
-            {mods.length === 0
-              ? 'No mods imported yet. Drop a .zip above to get started.'
-              : 'No mods match this filter.'}
-          </p>
+          <div className="min-w-0 flex-1 overflow-y-auto p-4">
+            {filteredCatalog.length === 0 ? (
+              <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-launcher-border bg-launcher-surface/30 p-12 text-center">
+                <p className="text-sm text-launcher-muted">No mods match your search or filter.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <motion.div
+                  key={`${activeCategory}-${searchQuery}`}
+                  variants={staggerContainer}
+                  initial="hidden"
+                  animate="show"
+                  className="space-y-3"
+                >
+                  {filteredCatalog.map((mod) => {
+                    const libraryModId = installedMap[mod.id]
+                    const libraryMod = libraryModId ? modById.get(libraryModId) : undefined
+                    return (
+                      <CatalogModCard
+                        key={mod.id}
+                        mod={mod}
+                        installed={Boolean(libraryModId)}
+                        enabled={libraryMod?.enabled ?? false}
+                        busy={busyCatalogId === mod.id || busyModId === libraryModId}
+                        libraryModId={libraryModId}
+                        onInstall={(catalogId) => void handleCatalogInstall(catalogId)}
+                        onToggleMod={(modId, enabled) => void handleToggle(modId, enabled)}
+                      />
+                    )
+                  })}
+                </motion.div>
+              </div>
+            )}
+          </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {filteredMods.map((mod) => (
-            <ModCard
-              key={mod.id}
-              mod={mod}
-              busy={busyModId === mod.id || importing || batchBusy}
-              onToggle={(modId, enabled) => void handleToggle(modId, enabled)}
-              onDelete={(modId) => void handleDelete(modId)}
-            />
-          ))}
+        <div className="min-h-0 flex-1 overflow-y-auto p-6">
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <p className="text-sm text-launcher-muted">
+              {installedMods.length} installed mod{installedMods.length === 1 ? '' : 's'}
+            </p>
+            <MotionButton
+              disabled={importing}
+              onClick={() => void handleBrowseImport()}
+              className="rounded-xl border border-launcher-accent/40 bg-launcher-accent/10 px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-launcher-accent hover:bg-launcher-accent/20 disabled:opacity-50"
+            >
+              {importing ? 'Importing…' : 'Import .zip'}
+            </MotionButton>
+          </div>
+
+          {installedMods.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-launcher-border bg-launcher-surface/30 px-6 py-16 text-center">
+              <p className="text-sm text-launcher-muted">
+                No mods installed yet. Browse the catalog or import a .zip archive.
+              </p>
+              <MotionButton
+                onClick={() => setActiveTab('browse')}
+                className="mt-4 rounded-xl bg-gradient-to-r from-launcher-accent to-launcher-accent-dim px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-launcher-bg"
+              >
+                Browse catalog
+              </MotionButton>
+            </div>
+          ) : (
+            <motion.div
+              key="installed-list"
+              variants={staggerContainer}
+              initial="hidden"
+              animate="show"
+              className="space-y-2"
+            >
+              {installedMods.map((mod) => (
+                <InstalledModRow
+                  key={mod.id}
+                  mod={mod}
+                  busy={busyModId === mod.id || importing}
+                  onToggleMod={(modId, enabled) => void handleToggle(modId, enabled)}
+                  onDelete={(modId) => void handleDelete(modId)}
+                />
+              ))}
+            </motion.div>
+          )}
         </div>
       )}
     </div>

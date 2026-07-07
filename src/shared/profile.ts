@@ -1,4 +1,5 @@
 export type SubscriptionTier = 'free' | 'pro' | 'elite'
+export type ThemePreference = 'dark' | 'light'
 
 export interface UserProfile {
   id: string
@@ -6,6 +7,9 @@ export interface UserProfile {
   subscription_tier: SubscriptionTier
   role_badge: string
   created_at: string
+  sync_preferences_enabled: boolean
+  theme_preference: ThemePreference
+  default_install_path: string | null
 }
 
 export interface OAuthCallbackInfo {

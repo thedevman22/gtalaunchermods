@@ -16,6 +16,7 @@ import { app, BrowserWindow, dialog, ipcMain, type IpcMainInvokeEvent, type Open
 import type { OperationResult } from '../shared/game'
 import type {
   ModDeployedFile,
+  ModImportOptions,
   ModImportResult,
   ModListResult,
   ModManifest,
@@ -206,8 +207,19 @@ function manifestToSummary(manifest: ModManifest): ModSummary {
     description: manifest.description,
     enabled: manifest.enabled,
     importedAt: manifest.importedAt,
-    thumbnailDataUrl: loadThumbnailDataUrl(manifest.id)
+    thumbnailDataUrl: loadThumbnailDataUrl(manifest.id),
+    catalogId: manifest.catalogId
   }
+}
+
+export function findModByCatalogId(catalogId: string): ModManifest | null {
+  for (const modId of listModIds()) {
+    const manifest = readManifest(modId)
+    if (manifest?.catalogId === catalogId) {
+      return manifest
+    }
+  }
+  return null
 }
 
 function resolveDeployTarget(relativePath: string): string {
@@ -311,7 +323,10 @@ export function listMods(): ModListResult {
   }
 }
 
-export async function importMod(zipPath: string): Promise<ModImportResult> {
+export async function importMod(
+  zipPath: string,
+  options?: ModImportOptions
+): Promise<ModImportResult> {
   const blocked = assertModsAllowed()
   if (blocked) {
     return blocked
@@ -351,10 +366,14 @@ export async function importMod(zipPath: string): Promise<ModImportResult> {
 
     const manifest: ModManifest = {
       id: modId,
-      ...metadata,
+      name: options?.name ?? metadata.name,
+      author: options?.author ?? metadata.author,
+      version: options?.version ?? metadata.version,
+      description: options?.description ?? metadata.description,
       enabled: false,
       importedAt: new Date().toISOString(),
-      deployedFiles: []
+      deployedFiles: [],
+      catalogId: options?.catalogId
     }
 
     writeManifest(modId, manifest)

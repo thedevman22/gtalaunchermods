@@ -1,10 +1,11 @@
 import { FEATURES } from '@/lib/constants'
+import ScrollReveal from '@/components/ScrollReveal'
 
 export default function Features(): React.JSX.Element {
   return (
     <section id="features" className="border-t border-border/60 px-4 py-20 sm:px-6 lg:py-28">
       <div className="mx-auto max-w-6xl">
-        <div className="mx-auto max-w-2xl text-center">
+        <ScrollReveal className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.25em] text-accent">Features</p>
           <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
             Built for safe single-player modding
@@ -13,9 +14,9 @@ export default function Features(): React.JSX.Element {
             Everything you need to organize mods and launch GTA V offline — without risking your
             online account.
           </p>
-        </div>
+        </ScrollReveal>
 
-        <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <ScrollReveal delay={0.06} className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((feature) => (
             <article
               key={feature.title}
@@ -28,7 +29,7 @@ export default function Features(): React.JSX.Element {
               <p className="mt-2 text-sm leading-relaxed text-muted">{feature.description}</p>
             </article>
           ))}
-        </div>
+        </ScrollReveal>
       </div>
     </section>
   )

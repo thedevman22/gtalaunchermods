@@ -1,11 +1,17 @@
 import { useEffect, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import Sidebar from '@renderer/components/Sidebar'
+import SplashScreen from '@renderer/components/SplashScreen'
 import HomePage from '@renderer/pages/HomePage'
 import ModsPage from '@renderer/pages/ModsPage'
 import SettingsPage from '@renderer/pages/SettingsPage'
 import AccountPage from '@renderer/pages/AccountPage'
 import LoginPage from '@renderer/pages/LoginPage'
 import { AuthProvider, useAuth } from '@renderer/context/AuthContext'
+import { LaunchProvider } from '@renderer/context/LaunchContext'
+import { ModSyncProvider } from '@renderer/context/ModSyncContext'
+import { useStartupSequence } from '@renderer/hooks/useStartupSequence'
+import { pageTransition } from '@renderer/lib/motion'
 import type { NavItem } from '@renderer/types/navigation'
 
 const PAGE_TITLES: Record<NavItem, string> = {
@@ -13,17 +19,6 @@ const PAGE_TITLES: Record<NavItem, string> = {
   mods: 'Mods',
   settings: 'Settings',
   account: 'Account'
-}
-
-function LoadingScreen(): React.JSX.Element {
-  return (
-    <div className="flex h-full items-center justify-center bg-launcher-bg">
-      <div className="flex items-center gap-3 text-sm text-launcher-muted">
-        <span className="h-2 w-2 animate-pulse rounded-full bg-launcher-accent" />
-        Loading…
-      </div>
-    </div>
-  )
 }
 
 function MainShell(): React.JSX.Element {
@@ -50,10 +45,7 @@ function MainShell(): React.JSX.Element {
         return <HomePage />
       case 'mods':
         return (
-          <ModsPage
-            onNavigateToAccount={() => setActiveNav('account')}
-            onNavigateSettings={() => setActiveNav('settings')}
-          />
+          <ModsPage onNavigateSettings={() => setActiveNav('settings')} />
         )
       case 'settings':
         return <SettingsPage />
@@ -78,7 +70,13 @@ function MainShell(): React.JSX.Element {
           </span>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-6">{renderPage()}</div>
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-6">
+          <AnimatePresence mode="wait">
+            <motion.div key={activeNav} {...pageTransition} className="h-full">
+              {renderPage()}
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </main>
     </div>
   )
@@ -86,22 +84,34 @@ function MainShell(): React.JSX.Element {
 
 function AppContent(): React.JSX.Element {
   const { session, loading, isOfflineDev } = useAuth()
+  const startup = useStartupSequence(!loading)
+  const showMain = startup.phase === 'hidden'
 
-  if (loading) {
-    return <LoadingScreen />
+  if (!showMain) {
+    return (
+      <SplashScreen
+        progress={startup.progress}
+        statusText={startup.statusText}
+        exiting={startup.phase === 'exiting'}
+      />
+    )
   }
 
-  if (!session && !isOfflineDev) {
-    return <LoginPage />
-  }
-
-  return <MainShell />
+  return (
+    <div className="app-enter h-full">
+      {!session && !isOfflineDev ? <LoginPage /> : <MainShell />}
+    </div>
+  )
 }
 
 export default function App(): React.JSX.Element {
   return (
     <AuthProvider>
-      <AppContent />
+      <ModSyncProvider>
+        <LaunchProvider>
+          <AppContent />
+        </LaunchProvider>
+      </ModSyncProvider>
     </AuthProvider>
   )
 }

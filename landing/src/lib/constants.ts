@@ -109,3 +109,26 @@ export const COMPARISON_ROWS = [
   { feature: 'Early access features', free: false, pro: false, elite: true },
   { feature: 'Mods are free', free: true, pro: true, elite: true }
 ] as const
+
+export const HOW_IT_WORKS_STEPS = [
+  {
+    title: 'Download',
+    description:
+      'Grab the free Windows installer and run the setup wizard. The launcher auto-detects GTA V from Steam, Epic, or Rockstar.'
+  },
+  {
+    title: 'Sign In',
+    description:
+      'Create an account with email or Google — the same login works on this site and in the desktop app, so your profile travels with you.'
+  },
+  {
+    title: 'Browse Mods',
+    description:
+      'Explore the built-in catalog, import .zip archives, and toggle mods on or off. Your library stays isolated until you enable each mod.'
+  },
+  {
+    title: 'Launch Story Mode',
+    description:
+      'Hit Play to launch GTA V with -scOfflineOnly enforced. Story mode only, offline-safe, with your enabled mods deployed cleanly.'
+  }
+] as const

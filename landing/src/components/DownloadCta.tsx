@@ -19,7 +19,9 @@ export default function DownloadCta({
   const [os, setOs] = useState<OsFamily>('unknown')
 
   useEffect(() => {
-    setOs(detectOs(navigator.userAgent, navigator.platform))
+    void Promise.resolve().then(() => {
+      setOs(detectOs(navigator.userAgent, navigator.platform))
+    })
   }, [])
 
   const showNonWindowsNote = isNonWindowsOs(os)
