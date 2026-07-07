@@ -71,3 +71,32 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_MODHARBOR_WEBSITE_URL: ${{ secrets.VITE_MODHARBOR_WEBSITE_URL }}
           VITE_BILLING_API_URL: ${{ secrets.VITE_BILLING_API_URL }}
+
+      - name: Remove duplicate GitHub releases for tag
+        if: success() && steps.check.outputs.skip != 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="v${{ steps.version.outputs.version }}"
+          REPO="${{ github.repository }}"
+          mapfile -t rows < <(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" \
+            "https://api.github.com/repos/${REPO}/releases?per_page=30" | \
+            jq -r --arg v "$VERSION" '.[] | select(.tag_name==$v) | "\(.id)|\(.assets|map(.name)|join(","))"')
+          keep=""
+          for row in "${rows[@]}"; do
+            id="${row%%|*}"
+            names="${row#*|}"
+            if [[ "$names" == *"latest.yml"* ]]; then
+              keep="$id"
+              break
+            fi
+          done
+          for row in "${rows[@]}"; do
+            id="${row%%|*}"
+            if [[ -n "$keep" && "$id" != "$keep" ]]; then
+              echo "Deleting duplicate release $id for $VERSION"
+              curl -fsSL -X DELETE -H "Authorization: Bearer $GH_TOKEN" \
+                "https://api.github.com/repos/${REPO}/releases/${id}"
+            fi
+          done

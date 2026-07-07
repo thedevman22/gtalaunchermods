@@ -41,6 +41,8 @@ nsis:
   perMachine: false
   allowToChangeInstallationDirectory: true
   allowElevation: true
+  # Avoid a second GitHub release that only holds the blockmap (breaks /releases/download URLs).
+  differentialPackage: false
   installerIcon: build/icon.ico
   uninstallerIcon: build/icon.ico
   installerHeaderIcon: build/icon.ico
